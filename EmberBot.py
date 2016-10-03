@@ -16,7 +16,7 @@ import smtplib   # used for sending the response email
 botUsername = "emberuiucbot"
 botPassword = "emberbotproject123"
 
-# creates the server that will be responsivle for idling
+# creates the server that will be responsible for idling
 mail = imaplib.IMAP4_SSL("imap.gmail.com")
 mail.login(botUsername, botPassword)
 mail.select("Inbox")
@@ -55,6 +55,7 @@ for resp in mail.idle():
         varFrom = Cleaner.onlyGetAddress(varFrom.split())
 
         incompleteEmailList = Cleaner.setIncompleteEmailList(varTo, varFrom)
+        incompleteEmailList = Cleaner.removeRedundantAddresses(incompleteEmailList)
         completeEmailList = Cleaner.selectEmailAddresses(incompleteEmailList)
 
         # Tests to ensure the "from" and "to" fields are correctly parsed

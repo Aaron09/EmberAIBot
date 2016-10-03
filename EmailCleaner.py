@@ -8,6 +8,7 @@
 def cleanEmailString(emailAddress):
     emailAddress = emailAddress.replace('<', '')
     emailAddress = emailAddress.replace('>', '')
+    emailAddress = emailAddress.replace('"', '')
     return emailAddress
 
 def selectEmailAddresses(listOfPossibleAddresses):
@@ -35,6 +36,12 @@ def setIncompleteEmailList(toField, fromField):
     uncleanedAddresses.append(fromField)
     return uncleanedAddresses
 
+def removeRedundantAddresses(emailList):
+    emails = []
+    for email in emailList:
+        if email not in emails:
+            emails.append(email)
+    return emails
 
 def toTest(completeAddressList):
     print "TO: "
