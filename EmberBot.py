@@ -26,7 +26,6 @@ receivedMail = False
 usedUIDS = []  # to prevent an email in the idle box to be used twice
 
 for resp in mail.idle():
-
     # resp contains an asterisk, uid, and "exists" message associated with each email
     for potentialUID in resp.split():   # looks for the uid
         if potentialUID.isdigit() and potentialUID not in usedUIDS:
