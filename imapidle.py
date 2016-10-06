@@ -4,7 +4,6 @@
 import imaplib
 
 
-
 def idle(connection):
     tag = connection._new_tag()
     connection.send("%s IDLE\r\n" % tag)
