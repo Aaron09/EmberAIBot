@@ -12,8 +12,11 @@ def idle(connection):
     connection.loop = True
     if response == '+ idling\r\n':
         while connection.loop:
+            print "idling"
             resp = connection.readline()
-            yield resp
+            print resp
+            if resp != None:
+                yield resp
            # uid, message = resp[2:-2].split(' ')
            # yield uid, message
     else:

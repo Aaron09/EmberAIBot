@@ -12,6 +12,11 @@ from imapidle import imaplib
 import email
 import EmailCleaner as Cleaner  # custom API made by Aaron Green for organizing EmberBot code
 import smtplib   # used for sending the response email
+from email.mime.text import MIMEText
+
+storageDict = {}
+hasResponded = []
+totalResponderList = []
 
 botUsername = "emberuiucbot"
 botPassword = "emberbotproject123"
@@ -19,31 +24,36 @@ botPassword = "emberbotproject123"
 # creates the server that will be responsible for idling
 mail = imaplib.IMAP4_SSL("imap.gmail.com")
 mail.login(botUsername, botPassword)
-mail.select("Inbox")
+mail.select("[Gmail]/All Mail")
 
 uid = 0  # each email sent and received has an associated uid
 receivedMail = False
 usedUIDS = []  # to prevent an email in the idle box to be used twice
+isFirstInChain = False
 
 for resp in mail.idle():
+
     # resp contains an asterisk, uid, and "exists" message associated with each email
+    print "received email"
+    print resp
     for potentialUID in resp.split():   # looks for the uid
-        if potentialUID.isdigit() and potentialUID not in usedUIDS:
+        if potentialUID.isdigit(): #and potentialUID not in usedUIDS:
             uid = potentialUID
-            usedUIDS.append(uid)
+           # usedUIDS.append(uid)
             receivedMail = True
 
     if receivedMail:
         # a temporary mail server is created to fetch emails, since the original server must remain idling
         tempMailServer = imaplib.IMAP4_SSL("imap.gmail.com")
         tempMailServer.login(botUsername, botPassword)
-        tempMailServer.select("Inbox")
+        tempMailServer.select("[Gmail]/All Mail")
         status, data = tempMailServer.fetch(uid, '(RFC822)')  # fetches the currently most recent email
         msg = email.message_from_string(data[0][1])  # pulls the message information from the email data
 
         # gathers the text from the "from" and "to" fields of the email
         varFrom = msg["From"]
         varTo = msg["To"]
+        subjectKey = msg["Subject"]
 
         # removes brackets around email address / cleans it up
         varFrom = Cleaner.cleanEmailString(varFrom)
@@ -62,21 +72,41 @@ for resp in mail.idle():
         Cleaner.toTest(completeEmailList)
         # end tests
 
+        chainID = Cleaner.identifier(subjectKey, varFrom)
+
+      #  tempMailServer.store(uid, '+FLAGS', '\\Deleted')
+       #  tempMailServer.expunge()
+
         receivedMail = False
         tempMailServer.close()  # closes the temporary server
 
+        # response code is below
+        # execute group members' functions here
+
+        if subjectKey[len(subjectKey)-8:len(subjectKey)] in storageDict:
+            isFirstInChain = False
+            hasResponded.append(varFrom)
+            if hasResponded == totalResponderList:
+                print "all responses completed"
+        else:
+            isFirstInChain = True
+            totalResponderList = completeEmailList
+            storageDict[chainID] = (subjectKey, varFrom)
+
         # the following code is responsible for sending the response emails
+        if isFirstInChain:
+            server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
+            server.starttls()  # protects username and password
+            server.login(botUsername, botPassword)
+            msg = MIMEText("This is the body", "plain")
+            msg['Subject'] = "Times to meet --" + chainID
+            msg['From'] = botUsername
 
-        server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
-        server.starttls()  # protects username and password
-        server.login(botUsername, botPassword)
-        message = "This was sent using an email bot"  # this can be straight text or another String variable
+            Cleaner.sendEmails(completeEmailList, botUsername, msg, server)
 
-        Cleaner.sendEmails(completeEmailList, botUsername, message, server)
+            # when an email is sent, it is given a uid, so this must also be added to the used list
+            # or the program will attempt to access it on the next loop, crashing the program because
+            # necessary fields will be null
+            usedUIDS.append(str(int(uid) + 1))
 
-        # when an email is sent, it is given a uid, so this must also be added to the used list
-        # or the program will attempt to access it on the next loop, crashing the program because
-        # necessary fields will be null
-        usedUIDS.append(str(int(uid) + 1))
-
-        server.quit()  # closes the temporary sending server
+            server.quit()  # closes the temporary sending server
