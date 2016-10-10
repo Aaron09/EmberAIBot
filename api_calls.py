@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(parents=[tools.argparser])
 flags = parser.parse_args()
 
 SCOPES = 'https://www.googleapis.com/auth/calendar'
-CLIENT_SECRET_FILE = 'client_secret.json'  # You must have a client_secret.json file (for now) in order to run this file
+CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Ember Google Calendar API Access'
 
 
@@ -31,7 +31,8 @@ def get_credentials(user):
     Returns:
         Credentials, the obtained credential.
     """
-    credential_dir = os.path.realpath('.credentials')
+    home_dir = os.path.expanduser('~')
+    credential_dir = os.path.join(home_dir, '.credentials')
     if not os.path.exists(credential_dir):
         os.makedirs(credential_dir)
     credential_path = os.path.join(credential_dir,
