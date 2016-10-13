@@ -18,15 +18,10 @@ storageDict = {}
 hasRespondedDict = {}
 totalResponderDict = {}
 
-botUsername = "emberuiucbot"
-botPassword = "emberbotproject123"
-
-
-# KABIR USE THIS AND COMMENT OUT THE USERNAME AND PASSWORD ABOVE
-# botUsername = "emberuiucbot2"
-# botPassword = "emberbotproject1234"
-###
-
+# to hide the username and password on github
+with open("BotCredentials") as file:
+    botUsername = file.readline().strip()
+    botPassword = file.readline().strip()
 
 # creates the server that will be responsible for idling
 mail = imaplib.IMAP4_SSL("imap.gmail.com")
@@ -47,9 +42,12 @@ for resp in mail.idle():
         potentialUID = respList[i]
         if potentialUID.isdigit() and potentialUID not in usedUIDS and respList[i+1] == "EXISTS":
             uid = potentialUID
+            usedUIDS.append(str(uid))
             receivedMail = True
 
     if receivedMail:
+        properToField = True
+
         # a temporary mail server is created to fetch emails, since the original server must remain idling
         tempMailServer = imaplib.IMAP4_SSL("imap.gmail.com")
         tempMailServer.login(botUsername, botPassword)
@@ -81,9 +79,6 @@ for resp in mail.idle():
 
         chainID = Cleaner.identifier(subjectKey, varFrom)
 
-        tempMailServer.store(uid, "+FLAGS", '(\\Deleted)')
-        tempMailServer.expunge()
-
         receivedMail = False
         tempMailServer.close()  # closes the temporary server
 
@@ -91,50 +86,55 @@ for resp in mail.idle():
         # execute group members' functions here
         id = subjectKey[len(subjectKey)-8:len(subjectKey)]
 
-        if id in storageDict and isFirstResponse:
-            isFirstInChain = False
-            isFirstResponse = False
-            hasRespondedDict[id] = [varFrom]
-            hasRespondedDict[id].sort()
-            print hasRespondedDict[id]
-            totalResponderDict[id].sort()
-            print totalResponderDict[id]
-            if hasRespondedDict[id] == totalResponderDict[id]:
-                print "all responses completed"
-        elif id in storageDict:
-            tempRespList = hasRespondedDict[id]
-            tempRespList.append(varFrom)
-            hasRespondedDict[id] = tempRespList
-            hasRespondedDict[id].sort()
-            print hasRespondedDict[id]
-            totalResponderDict[id].sort()
-            print totalResponderDict[id]
-            if hasRespondedDict[id] == totalResponderDict[id]:
-                print "all responses completed"
-        else:
-            isFirstInChain = True
-            totalResponderDict[chainID] = completeEmailList
-            storageDict[chainID] = varFrom
-            totalResponderDict[chainID].sort()
-            print totalResponderDict[chainID]
-
-        # the following code is responsible for sending the response emails
         if isFirstInChain:
-            server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
-            server.starttls()  # protects username and password
-            server.login(botUsername, botPassword)
-            msg = MIMEText("This is the body", "plain")
-            msg['Subject'] = "Times to meet --" + chainID
-            msg['From'] = botUsername
+            for potentialEmail in varTo.split():
+                if botUsername in potentialEmail:
+                    properToField = False
 
-            Cleaner.sendEmails(completeEmailList, botUsername, msg, server)
+        if properToField:
+            if id in storageDict and isFirstResponse:
+                isFirstInChain = False
+                isFirstResponse = False
+                hasRespondedDict[id] = [varFrom]
+                hasRespondedDict[id].sort()
+                print hasRespondedDict[id]
+                totalResponderDict[id].sort()
+                print totalResponderDict[id]
+                if hasRespondedDict[id] == totalResponderDict[id]:
+                    print "all responses completed"
+            elif id in storageDict:
+                tempRespList = hasRespondedDict[id]
+                tempRespList.append(varFrom)
+                hasRespondedDict[id] = tempRespList
+                hasRespondedDict[id].sort()
+                print hasRespondedDict[id]
+                totalResponderDict[id].sort()
+                print totalResponderDict[id]
+                if hasRespondedDict[id] == totalResponderDict[id]:
+                    print "all responses completed"
+            else:
+                isFirstInChain = True
+                totalResponderDict[chainID] = completeEmailList
+                storageDict[chainID] = varFrom
+                totalResponderDict[chainID].sort()
+                print totalResponderDict[chainID]
 
-            # when an email is sent, it is given a uid, so this must also be added to the used list
-            # or the program will attempt to access it on the next loop, crashing the program because
-            # necessary fields will be null
-            # program tries to access the previous email if there is no next email; however, the previous email
-            # no longer exists either, thus, adding the previous uid prevents the program from acting on the
-            # previous email and crashing
-            usedUIDS.append(str(int(uid) - 1))
+            # the following code is responsible for sending the response emails
+            if isFirstInChain:
+                server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
+                server.starttls()  # protects username and password
+                server.login(botUsername, botPassword)
+                msg = MIMEText("This is the body", "plain")
+                msg['Subject'] = "Times to meet --" + chainID
+                msg['From'] = botUsername
 
-            server.quit()  # closes the temporary sending server
+                Cleaner.sendEmails(completeEmailList, botUsername, msg, server)
+
+                # when an email is sent, it is given a uid, so this must also be added to the used list
+                # or the program will attempt to access it on the next loop, crashing the program because
+                # necessary fields will be null
+                # program tries to access the previous email if there is no next email; however, the previous email
+                # no longer exists either, thus, adding the previous uid prevents the program from acting on the
+                # previous email and crashing
+                isFirstInChain = False
+                server.quit()  # closes the temporary sending server
