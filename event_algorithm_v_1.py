@@ -3,6 +3,7 @@ import json
 import os
 from dateutil import rrule
 from datetime import datetime, timedelta
+from api_calls.py import *
 
 class time_slot(object):
 		def __init__(self,in_start_time,in_end_time):
@@ -40,8 +41,8 @@ class calendar(object):
 
 #Params: 2 calendar objects
 #Returns: A list of size 2 lists containing start of that free block and the end of that free block.
-def checkTime(cal1, cal2):
-		calendar_collection = [cal1,cal2]
+def checkTime(calendar_list):
+		calendar_collection = calendar_list
 		free_zones_JSON = []
 		in_free_time = False
 
@@ -108,24 +109,18 @@ def checkCountCalendars(calendar_collection):
 	return count == len(calendar_collection)
 
 
-def getJSONSandcheck():
+def create_calendar(json_file):
 	#Curently reads 2 dummy JSON files
-	if(os.path.isfile('calendar1.json')):
-				with open('calendar1.json') as data_file:
-						calendar1_data = json.load(data_file)
-	calendar1 = calendar()
-	calendar1.add_events(calendar1_data)
+	if(os.path.isfile(json_file)):
+		with open(json_file) as data_file:
+				calendar_data = json.load(data_file)
+    return calendar().add_events(calendar_data)
 
-	if(os.path.isfile('calendar2.json')):
-				with open('calendar2.json') as data_file:
-						calendar2_data = json.load(data_file)
-	calendar2 = calendar()
-	calendar2.add_events(calendar2_data)
-
+def create_free_times_json(calendar_list):
 	with open('free_times.json', 'w') as outfile:
-			json.dump(checkTime(calendar1,calendar2), outfile)
+			json.dump(checkTime(calendar_list), outfile)
 
-def generate_email(data_set):
+def generate_email_content(data_set):
     free_zone_starts = []
     free_zone_ends = []
     for free_zone in data_set['free_zones']:
@@ -137,7 +132,7 @@ def generate_email(data_set):
     message = "Hello, \nBoth parties have the following time slots avaiable to meet: \n"
     for i in range(len(free_zone_starts)):
 		message += free_zone_starts[i] + " to " + free_zone_ends[i] + "\n"
-    print message
+    return message
 
 def return_time(data_set):
     free_zone_starts = []
@@ -160,10 +155,19 @@ def return_time(data_set):
     }
     return event_body
 
-if __name__ == "__main__":
-	getJSONSandcheck()
-	if(os.path.isfile('free_times.json')):
+def return_free_times():
+    if(os.path.isfile('free_times.json')):
 		with open('free_times.json') as data_file:
 				free_times_data = json.load(data_file)
-		generate_email(free_times_data)
-        print(return_time(free_times_data))
+		generate_email_content(free_times_data)
+        #return to Aaron for email
+
+def main(email_list):
+    calendars = []
+    for email in email_list:
+        json_file = get_freebusy_query(email, datetime.datetime.utcnow().isoformat() + 'Z',
+                           (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z'))
+	    calendars.append(create_calendar(json_file))
+
+    create_free_times_json(calendars)
+    return_free_times()
