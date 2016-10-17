@@ -166,7 +166,7 @@ def return_free_times():
 
 #main method to execute whole process
 #AARON THIS IS FOR YOU!
-#@Params email_list liss of strings -- corresponds to users emails
+#@Params email_list list of strings -- corresponds to users emails
 #@Returns formatted string for email
 def main(email_list):
     calendars = []

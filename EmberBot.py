@@ -13,6 +13,7 @@ import email
 import EmailCleaner as Cleaner  # custom API made by Aaron Green for organizing EmberBot code
 import smtplib   # used for sending the response email
 from email.mime.text import MIMEText
+import event_algorithm_v_1 as CalendarFinder
 
 storageDict = {}
 hasRespondedDict = {}
@@ -77,35 +78,45 @@ for resp in mail.idle():
         Cleaner.toTest(completeEmailList)
         # end tests
 
+        # generates unique id for email chain
         chainID = Cleaner.identifier(subjectKey, varFrom)
 
         receivedMail = False
         tempMailServer.close()  # closes the temporary server
 
-        # response code is below
-        # execute group members' functions here
+        # function to detect email chain id in received email
         id = subjectKey[len(subjectKey)-8:len(subjectKey)]
 
+        # if the email is sent directly to the bot (via the "TO" field),
+        # the bot will not respond (to such dumbassery)
         if isFirstInChain:
             for potentialEmail in varTo.split():
                 if botUsername in potentialEmail:
                     properToField = False
 
+        # if the user is not a shmuck,
+        # begin checking for stage in email chain
         if properToField:
             if id in storageDict and isFirstResponse:
                 isFirstInChain = False
                 isFirstResponse = False
+                # begins the list of who has responded
                 hasRespondedDict[id] = [varFrom]
                 hasRespondedDict[id].sort()
                 print hasRespondedDict[id]
+                # total list of people who need to respond
                 totalResponderDict[id].sort()
                 print totalResponderDict[id]
+                # if everyone has responded
                 if hasRespondedDict[id] == totalResponderDict[id]:
                     print "all responses completed"
             elif id in storageDict:
+                # must convert each response address to list to append to
+                # current list in id
                 tempRespList = hasRespondedDict[id]
                 tempRespList.append(varFrom)
                 hasRespondedDict[id] = tempRespList
+                # sort each time for comparison to total list
                 hasRespondedDict[id].sort()
                 print hasRespondedDict[id]
                 totalResponderDict[id].sort()
@@ -113,9 +124,11 @@ for resp in mail.idle():
                 if hasRespondedDict[id] == totalResponderDict[id]:
                     print "all responses completed"
             else:
+                # this is the email that begins the chain
                 isFirstInChain = True
+                # set everyone that needs to respond
                 totalResponderDict[chainID] = completeEmailList
-                storageDict[chainID] = varFrom
+                storageDict[chainID] = varFrom # maybe can remove this line
                 totalResponderDict[chainID].sort()
                 print totalResponderDict[chainID]
 
@@ -124,7 +137,7 @@ for resp in mail.idle():
                 server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
                 server.starttls()  # protects username and password
                 server.login(botUsername, botPassword)
-                msg = MIMEText("This is the body", "plain")
+                msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
                 msg['Subject'] = "Times to meet --" + chainID
                 msg['From'] = botUsername
 
