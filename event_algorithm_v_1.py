@@ -3,6 +3,7 @@ import json
 import os
 from dateutil import rrule
 from datetime import datetime, timedelta
+from api_calls import *
 
 class time_slot(object):
 		def __init__(self,in_start_time,in_end_time):
@@ -36,20 +37,20 @@ class calendar(object):
 		#adds all events as objects from provided calendar data set to the calender object
 		def add_events(self, data_set):
 				for time_set in data_set['calendars']['primary']['busy']:
-						self.my_events.append(event(datetime.strptime(time_set['end'], "%Y-%m-%dT%H:%M:%Sz"), datetime.strptime(time_set['start'],"%Y-%m-%dT%H:%M:%Sz")))
+						self.my_events.append(event(datetime.datetime.strptime(time_set['end'], "%Y-%m-%dT%H:%M:%Sz"), datetime.datetime.strptime(time_set['start'],"%Y-%m-%dT%H:%M:%Sz")))
 
 #Params: 2 calendar objects
 #Returns: A list of size 2 lists containing start of that free block and the end of that free block.
-def checkTime(cal1, cal2):
-		calendar_collection = [cal1,cal2]
+def checkTime(calendar_list):
+		calendar_collection = calendar_list
 		free_zones_JSON = []
 		in_free_time = False
 
 		#These are simply dummy times and will be changed once we check sections larger than 24h
-		start = datetime(2016,9,20)
+		start = datetime.datetime.utcnow()
 		end = start + timedelta(days=1)
 
-		for dt in rrule.rrule(rrule.MINUTELY, dtstart=start, until=end):    
+		for dt in rrule.rrule(rrule.MINUTELY, dtstart=start, until=end):
 			for calendar in calendar_collection:
 				for event in calendar.my_events:
 					if(event.event_starts(dt.hour,dt.minute)):
@@ -63,23 +64,32 @@ def checkTime(cal1, cal2):
 					free_zones_JSON.append({
 													"type": "start",
 													"hour": dt.hour,
-													"minute": dt.minute
+													"minute": dt.minute,
+                                                    "day": dt.day,
+                                                    "month": dt.month,
+                                                    "year": dt.day
 											})
 					in_free_time = True
 				elif(not allCalendarsFree and in_free_time):
 					free_zones_JSON.append({
 													"type": "end",
 													"hour": dt.hour,
-													"minute": dt.minute
+													"minute": dt.minute,
+                                                    "day": dt.day,
+                                                    "month": dt.month,
+                                                    "year": dt.day
 											})
 					in_free_time = False
-					
+
 		#if the 2 cals are free until the end of that day
 		if(in_free_time):
 			free_zones_JSON.append({
 											"type": "end",
 											"hour": 23,
-											"minute": 59
+											"minute": 59,
+                                            "day":5,
+                                            "month":12,
+                                            "year":2016
 									})
 
 		#The Json Object we return.
@@ -99,47 +109,82 @@ def checkCountCalendars(calendar_collection):
 	return count == len(calendar_collection)
 
 
-def getJSONSandcheck():
-	#Curently reads 2 dummy JSON files
-	if(os.path.isfile('calendar1.json')):
-				with open('calendar1.json') as data_file:
-						calendar1_data = json.load(data_file)
-	calendar1 = calendar()
-	calendar1.add_events(calendar1_data)
+#takes json input for specific calendar and creates new calendar object with data from json
+def create_calendar(json_data):
+    calendar_new = calendar()
+    calendar_new.add_events(json.loads(json_data))
+    return calendar_new
 
-	if(os.path.isfile('calendar2.json')):
-				with open('calendar2.json') as data_file:
-						calendar2_data = json.load(data_file)
-	calendar2 = calendar()
-	calendar2.add_events(calendar2_data)
-
+#creates json file with all the free times between calendars
+def create_free_times_json(calendar_list):
 	with open('free_times.json', 'w') as outfile:
-			json.dump(checkTime(calendar1,calendar2), outfile)
+			json.dump(checkTime(calendar_list), outfile)
 
-def create_timeslots(data_set):
-		global time_slots
-		time_slots = []
-		free_zone_starts = []
-		free_zone_ends = []
-		for free_zone in data_set['free_zones']:
-				if free_zone['type'] == "start":
-						free_zone_starts.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
-				else:
-						free_zone_ends.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
-		for i in range(len(free_zone_starts)):
-				time_slots.append(time_slot(free_zone_starts[i], free_zone_ends[i]))
+# creates email message with all the free times
+def generate_email_content(data_set):
+    free_zone_starts = []
+    free_zone_ends = []
+    for free_zone in data_set['free_zones']:
+        if free_zone['type'] == "start":
+            free_zone_starts.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
+        else:
+            free_zone_ends.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
+    message = "Hello, \nBoth parties have the following time slots avaiable to meet: \n"
+    for i in range(len(free_zone_starts)):
+		message += free_zone_starts[i] + " to " + free_zone_ends[i] + "\n"
+    return message
 
+#return the first free time and puts it in json to be added to calendar
+#OPHIR THIS IS FOR YOU!
+def return_time(data_set):
+    free_zone_starts = []
+    free_zone_ends = []
+    for free_zone in data_set['free_zones']:
+        if free_zone['type'] == "start":
+            free_zone_starts.append(datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute']).isoformat())
+        else:
+            free_zone_ends.append(datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute']).isoformat())
+    event_body = {
+        'summary': 'Test Event!',
+        'location': '201 N Goodwin Ave, Urbana, IL 61801',
+        'description': 'Check out this cool test event!',
+        'start': {
+          'dateTime': free_zone_starts[0] + 'Z',
+        },
+        'end': {
+            'dateTime': free_zone_ends[0] + 'Z',
+        }
+    }
+    return event_body
 
-def generate_email():
-		message = "Hello, \nBoth parties have the following time slots avaiable to meet: \n"
-		for time_slot in time_slots:
-				message += time_slot.start_time + " to " + time_slot.end_time + "\n"
-		print message
+#opens json file and creates email content
+def return_free_times():
+    if(os.path.isfile('free_times.json')):
+		with open('free_times.json') as data_file:
+				free_times_data = json.load(data_file)
+    return generate_email_content(free_times_data) #return to Aaron for email
 
-if __name__ == "__main__":
-		getJSONSandcheck()
-		if(os.path.isfile('free_times.json')):
-					with open('free_times.json') as data_file:
-							free_times_data = json.load(data_file)
-		create_timeslots(free_times_data)
-		generate_email()
+#main method to execute whole process
+#AARON THIS IS FOR YOU!
+#@Params email_list list of strings -- corresponds to users emails
+#@Returns formatted string for email
+def main(email_list):
+    calendars = []
+    for email in email_list:
+        json_file = get_freebusy_query(email, datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
+        calendars.append(create_calendar(json_file))
+
+    create_free_times_json(calendars)
+    return return_free_times()
+
+if __name__ == '__main__':
+    main(["email1", "email2"])
+    # calendars = []
+    # json_file1 = get_freebusy_query("email1", datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
+    # json_file2 = get_freebusy_query("email2", datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
+    # print(json_file1)
+    # print(json_file2)
+    # calendars.append(create_calendar(json_file1))
+    # calendars.append(create_calendar(json_file2))
+    # create_free_times_json(calendars)
+    # print return_free_times()
