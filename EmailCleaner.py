@@ -8,6 +8,8 @@
 def cleanEmailString(emailAddress):
     emailAddress = emailAddress.replace('<', '')
     emailAddress = emailAddress.replace('>', '')
+    emailAddress = emailAddress.replace('"', '')
+    emailAddress = emailAddress.replace(',', '')
     return emailAddress
 
 def selectEmailAddresses(listOfPossibleAddresses):
@@ -20,7 +22,7 @@ def selectEmailAddresses(listOfPossibleAddresses):
 def sendEmails(listOfEmails, senderEmail, msg, sendServer):
     for address in listOfEmails:
         print "sending message to: " + address
-        sendServer.sendmail(senderEmail, address, msg)
+        sendServer.sendmail(senderEmail, address, msg.as_string())
         print "message sent"
 
 def onlyGetAddress(potentialEmailList):
@@ -35,6 +37,12 @@ def setIncompleteEmailList(toField, fromField):
     uncleanedAddresses.append(fromField)
     return uncleanedAddresses
 
+def removeRedundantAddresses(emailList):
+    emails = []
+    for email in emailList:
+        if email not in emails:
+            emails.append(email)
+    return emails
 
 def toTest(completeAddressList):
     print "TO: "
@@ -43,3 +51,9 @@ def toTest(completeAddressList):
 def fromTest(testSenderEmail):
     print "SENDER: "
     print testSenderEmail
+
+def identifier(subject, address):
+    subjectSect = subject[len(subject)-4:len(subject)]
+    addressSect = address[0:4]
+    id = subjectSect + addressSect
+    return id

@@ -12,11 +12,19 @@ from imapidle import imaplib
 import email
 import EmailCleaner as Cleaner  # custom API made by Aaron Green for organizing EmberBot code
 import smtplib   # used for sending the response email
+from email.mime.text import MIMEText
+import event_algorithm_v_1 as CalendarFinder
 
-botUsername = "emberuiucbot"
-botPassword = "emberbotproject123"
+storageDict = {}
+hasRespondedDict = {}
+totalResponderDict = {}
 
-# creates the server that will be responsivle for idling
+# to hide the username and password on github
+with open("BotCredentials") as file:
+    botUsername = file.readline().strip()
+    botPassword = file.readline().strip()
+
+# creates the server that will be responsible for idling
 mail = imaplib.IMAP4_SSL("imap.gmail.com")
 mail.login(botUsername, botPassword)
 mail.select("Inbox")
@@ -24,17 +32,23 @@ mail.select("Inbox")
 uid = 0  # each email sent and received has an associated uid
 receivedMail = False
 usedUIDS = []  # to prevent an email in the idle box to be used twice
+isFirstInChain = False
+isFirstResponse = True
 
 for resp in mail.idle():
 
     # resp contains an asterisk, uid, and "exists" message associated with each email
-    for potentialUID in resp.split():   # looks for the uid
-        if potentialUID.isdigit() and potentialUID not in usedUIDS:
+    respList = resp.split()
+    for i in range(0, len(respList)):   # looks for the uid
+        potentialUID = respList[i]
+        if potentialUID.isdigit() and potentialUID not in usedUIDS and respList[i+1] == "EXISTS":
             uid = potentialUID
-            usedUIDS.append(uid)
+            usedUIDS.append(str(uid))
             receivedMail = True
 
     if receivedMail:
+        properToField = True
+
         # a temporary mail server is created to fetch emails, since the original server must remain idling
         tempMailServer = imaplib.IMAP4_SSL("imap.gmail.com")
         tempMailServer.login(botUsername, botPassword)
@@ -45,6 +59,7 @@ for resp in mail.idle():
         # gathers the text from the "from" and "to" fields of the email
         varFrom = msg["From"]
         varTo = msg["To"]
+        subjectKey = msg["Subject"]
 
         # removes brackets around email address / cleans it up
         varFrom = Cleaner.cleanEmailString(varFrom)
@@ -55,6 +70,7 @@ for resp in mail.idle():
         varFrom = Cleaner.onlyGetAddress(varFrom.split())
 
         incompleteEmailList = Cleaner.setIncompleteEmailList(varTo, varFrom)
+        incompleteEmailList = Cleaner.removeRedundantAddresses(incompleteEmailList)
         completeEmailList = Cleaner.selectEmailAddresses(incompleteEmailList)
 
         # Tests to ensure the "from" and "to" fields are correctly parsed
@@ -62,21 +78,76 @@ for resp in mail.idle():
         Cleaner.toTest(completeEmailList)
         # end tests
 
+        # generates unique id for email chain
+        chainID = Cleaner.identifier(subjectKey, varFrom)
+
         receivedMail = False
         tempMailServer.close()  # closes the temporary server
 
-        # the following code is responsible for sending the response emails
+        # function to detect email chain id in received email
+        id = subjectKey[len(subjectKey)-8:len(subjectKey)]
 
-        server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
-        server.starttls()  # protects username and password
-        server.login(botUsername, botPassword)
-        message = "This was sent using an email bot"  # this can be straight text or another String variable
+        # if the email is sent directly to the bot (via the "TO" field),
+        # the bot will not respond (to such dumbassery)
+        if isFirstInChain:
+            for potentialEmail in varTo.split():
+                if botUsername in potentialEmail:
+                    properToField = False
 
-        Cleaner.sendEmails(completeEmailList, botUsername, message, server)
+        # if the user is not a shmuck,
+        # begin checking for stage in email chain
+        if properToField:
+            if id in storageDict and isFirstResponse:
+                isFirstInChain = False
+                isFirstResponse = False
+                # begins the list of who has responded
+                hasRespondedDict[id] = [varFrom]
+                hasRespondedDict[id].sort()
+                print hasRespondedDict[id]
+                # total list of people who need to respond
+                totalResponderDict[id].sort()
+                print totalResponderDict[id]
+                # if everyone has responded
+                if hasRespondedDict[id] == totalResponderDict[id]:
+                    print "all responses completed"
+            elif id in storageDict:
+                # must convert each response address to list to append to
+                # current list in id
+                tempRespList = hasRespondedDict[id]
+                tempRespList.append(varFrom)
+                hasRespondedDict[id] = tempRespList
+                # sort each time for comparison to total list
+                hasRespondedDict[id].sort()
+                print hasRespondedDict[id]
+                totalResponderDict[id].sort()
+                print totalResponderDict[id]
+                if hasRespondedDict[id] == totalResponderDict[id]:
+                    print "all responses completed"
+            else:
+                # this is the email that begins the chain
+                isFirstInChain = True
+                # set everyone that needs to respond
+                totalResponderDict[chainID] = completeEmailList
+                storageDict[chainID] = varFrom # maybe can remove this line
+                totalResponderDict[chainID].sort()
+                print totalResponderDict[chainID]
 
-        # when an email is sent, it is given a uid, so this must also be added to the used list
-        # or the program will attempt to access it on the next loop, crashing the program because
-        # necessary fields will be null
-        usedUIDS.append(str(int(uid) + 1))
+            # the following code is responsible for sending the response emails
+            if isFirstInChain:
+                server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
+                server.starttls()  # protects username and password
+                server.login(botUsername, botPassword)
+                msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
+                msg['Subject'] = "Times to meet --" + chainID
+                msg['From'] = botUsername
 
-        server.quit()  # closes the temporary sending server
+                Cleaner.sendEmails(completeEmailList, botUsername, msg, server)
+
+                # when an email is sent, it is given a uid, so this must also be added to the used list
+                # or the program will attempt to access it on the next loop, crashing the program because
+                # necessary fields will be null
+                # program tries to access the previous email if there is no next email; however, the previous email
+                # no longer exists either, thus, adding the previous uid prevents the program from acting on the
+                # previous email and crashing
+                isFirstInChain = False
+                server.quit()  # closes the temporary sending server
