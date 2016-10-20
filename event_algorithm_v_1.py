@@ -47,7 +47,7 @@ def checkTime(calendar_list):
 		in_free_time = False
 
 		#These are simply dummy times and will be changed once we check sections larger than 24h
-		start = datetime.datetime.utcnow()
+		start = datetime.datetime(2016,9,20)
 		end = start + timedelta(days=1)
 
 		for dt in rrule.rrule(rrule.MINUTELY, dtstart=start, until=end):
@@ -187,4 +187,4 @@ if __name__ == '__main__':
     # calendars.append(create_calendar(json_file1))
     # calendars.append(create_calendar(json_file2))
     # create_free_times_json(calendars)
-
+    # print return_free_times()

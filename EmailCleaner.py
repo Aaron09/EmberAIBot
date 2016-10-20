@@ -52,8 +52,8 @@ def fromTest(testSenderEmail):
     print "SENDER: "
     print testSenderEmail
 
-def identifier(subject, address):
+def identifier(subject, address, time):
     subjectSect = subject[len(subject)-4:len(subject)]
     addressSect = address[0:4]
-    id = subjectSect + addressSect
+    id = subjectSect + addressSect + time
     return id
