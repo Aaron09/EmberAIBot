@@ -56,7 +56,6 @@ for resp in mail.idle():
         tempMailServer.login(botUsername, botPassword)
         tempMailServer.select("Inbox")
         status, data = tempMailServer.fetch(uid, '(RFC822)')  # fetches the currently most recent email
-        print data[0][1]
         msg = email.message_from_string(data[0][1])  # pulls the message information from the email data
 
         # gathers the text from the "from" and "to" fields of the email
