@@ -134,9 +134,23 @@ def generate_email_content(data_set):
 		message += free_zone_starts[i] + " to " + free_zone_ends[i] + "\n"
     return message
 
+def generate_best_time_email(data_set, best_time):
+    free_zone_starts = []
+    free_zone_ends = []
+    for free_zone in data_set['free_zones']:
+        if free_zone['type'] == "start":
+            free_zone_starts.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
+        else:
+            free_zone_ends.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
+
+    message = "Hello, \nthe final meeting time will be at \n"
+    message += free_zone_starts[best_time] + " to " + free_zone_ends[best_time] + "\n"
+
+    return message
+
 #return the first free time and puts it in json to be added to calendar
 #OPHIR THIS IS FOR YOU!
-def return_time(data_set):
+def return_time(data_set, best_time):
     free_zone_starts = []
     free_zone_ends = []
     for free_zone in data_set['free_zones']:
@@ -144,17 +158,20 @@ def return_time(data_set):
             free_zone_starts.append(datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute']).isoformat())
         else:
             free_zone_ends.append(datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute']).isoformat())
+
     event_body = {
         'summary': 'Test Event!',
         'location': '201 N Goodwin Ave, Urbana, IL 61801',
         'description': 'Check out this cool test event!',
         'start': {
-          'dateTime': free_zone_starts[0] + 'Z',
+          'dateTime': free_zone_starts[best_time] + 'Z',
         },
         'end': {
-            'dateTime': free_zone_ends[0] + 'Z',
+            'dateTime': free_zone_ends[best_time] + 'Z',
         }
     }
+    #TODO: Here we will call Ophir's function and pass the eventbody json for
+    # ophir's magic to add to the calendar
     return event_body
 
 #opens json file and creates email content
@@ -176,6 +193,23 @@ def main(email_list):
 
     create_free_times_json(calendars)
     print return_free_times()
+
+def determine_ideal_time(times):
+    freq_times = {}
+    for time in times:
+        preferences = time.split(",")
+        for preference in preferenes:
+            if preferece not in freq_times:
+                freq_times[preferece] = 1
+            else
+                freq_times[preferece] += 1
+
+    if(os.path.isfile('free_times.json')):
+		with open('free_times.json') as data_file:
+                generate_best_time_email(data_file, max(freq_times, key=freq_times.get))
+				return_time(data_file, max(freq_times, key=freq_times.get))
+
+
 
 if __name__ == '__main__':
     main(["email1", "email2"])
