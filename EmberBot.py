@@ -14,10 +14,12 @@ import EmailCleaner as Cleaner  # custom API made by Aaron Green for organizing 
 import smtplib   # used for sending the response email
 from email.mime.text import MIMEText
 import event_algorithm_v_1 as CalendarFinder
+import EmailParser as Parser
 
 storageDict = {}
 hasRespondedDict = {}
 totalResponderDict = {}
+timeFrequencyDict = {}
 
 # to hide the username and password on github
 with open("BotCredentials") as file:
@@ -60,6 +62,8 @@ for resp in mail.idle():
         varFrom = msg["From"]
         varTo = msg["To"]
         subjectKey = msg["Subject"]
+        time = Parser.parseDateForTime(msg["Date"])
+        body = msg.get_payload()
 
         # removes brackets around email address / cleans it up
         varFrom = Cleaner.cleanEmailString(varFrom)
@@ -79,23 +83,22 @@ for resp in mail.idle():
         # end tests
 
         # generates unique id for email chain
-        chainID = Cleaner.identifier(subjectKey, varFrom)
+        chainID = Cleaner.identifier(subjectKey, varFrom, time)
 
         receivedMail = False
         tempMailServer.close()  # closes the temporary server
 
         # function to detect email chain id in received email
-        id = subjectKey[len(subjectKey)-8:len(subjectKey)]
+        id = Parser.findIdInSubjectLine(subjectKey)
 
         # if the email is sent directly to the bot (via the "TO" field),
-        # the bot will not respond (to such dumbassery)
+        # the bot will not respond
         if isFirstInChain:
             for potentialEmail in varTo.split():
                 if botUsername in potentialEmail:
                     properToField = False
 
-        # if the user is not a shmuck,
-        # begin checking for stage in email chain
+        # if the bot is not in the "TO" field
         if properToField:
             if id in storageDict and isFirstResponse:
                 isFirstInChain = False
@@ -107,9 +110,14 @@ for resp in mail.idle():
                 # total list of people who need to respond
                 totalResponderDict[id].sort()
                 print totalResponderDict[id]
+
+                # gathers the preferred times of the responder
+                timeFrequencyDict[id] = Parser.readResponseForTimes(body)
+
                 # if everyone has responded
                 if hasRespondedDict[id] == totalResponderDict[id]:
                     print "all responses completed"
+                    print timeFrequencyDict[id]
             elif id in storageDict:
                 # must convert each response address to list to append to
                 # current list in id
@@ -121,14 +129,19 @@ for resp in mail.idle():
                 print hasRespondedDict[id]
                 totalResponderDict[id].sort()
                 print totalResponderDict[id]
+
+                # gathers the preferred times of the responder
+                timeFrequencyDict[id] = Parser.readResponseForTimesForExistingDict(timeFrequencyDict[id], body)
+
                 if hasRespondedDict[id] == totalResponderDict[id]:
                     print "all responses completed"
+                    print timeFrequencyDict[id]
             else:
                 # this is the email that begins the chain
                 isFirstInChain = True
                 # set everyone that needs to respond
                 totalResponderDict[chainID] = completeEmailList
-                storageDict[chainID] = varFrom # maybe can remove this line
+                storageDict[chainID] = varFrom
                 totalResponderDict[chainID].sort()
                 print totalResponderDict[chainID]
 

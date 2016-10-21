@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"free_zones": [{"hour": 1, "month": 10, "year": 19, "type": "start", "day": 19, "minute": 50}, {"hour": 3, "month": 10, "year": 19, "type": "end", "day": 19, "minute": 0}, {"hour": 4, "month": 10, "year": 19, "type": "start", "day": 19, "minute": 0}, {"hour": 23, "month": 12, "year": 2016, "type": "end", "day": 5, "minute": 59}], "day": 1}
+=======
+{"free_zones": [{"hour": 1, "month": 9, "year": 20, "type": "start", "day": 20, "minute": 0}, {"hour": 19, "month": 9, "year": 20, "type": "end", "day": 20, "minute": 0}, {"hour": 19, "month": 9, "year": 20, "type": "start", "day": 20, "minute": 50}, {"hour": 0, "month": 9, "year": 21, "type": "end", "day": 21, "minute": 0}], "day": 1}
+>>>>>>> fe15be7e2e87086d8ce10c055ff3756cb839480c
