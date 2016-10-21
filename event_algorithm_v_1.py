@@ -175,7 +175,7 @@ def main(email_list):
         calendars.append(create_calendar(json_file))
 
     create_free_times_json(calendars)
-    return return_free_times()
+    print return_free_times()
 
 if __name__ == '__main__':
     main(["email1", "email2"])
@@ -187,4 +187,3 @@ if __name__ == '__main__':
     # calendars.append(create_calendar(json_file1))
     # calendars.append(create_calendar(json_file2))
     # create_free_times_json(calendars)
-
