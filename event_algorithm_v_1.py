@@ -207,8 +207,7 @@ def find_best_time_and_email(freq_times):
             #add to users calendars
             #for user in emails:
             #    api_calls.insert_event(user,event)
-
-            return generate_best_time_email(data_set, max(freq_times, key=freq_times.get))
+            return generate_best_time_email(data_set, max(freq_times, key=freq_times.get)-1)
 
 
 
