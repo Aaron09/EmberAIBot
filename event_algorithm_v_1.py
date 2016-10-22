@@ -67,7 +67,7 @@ def checkTime(calendar_list):
                                                     "minute": dt.minute,
                                                     "day": dt.day,
                                                     "month": dt.month,
-                                                    "year": dt.day
+                                                    "year": dt.year
                                             })
                     in_free_time = True
                 elif(not allCalendarsFree and in_free_time):
@@ -77,7 +77,7 @@ def checkTime(calendar_list):
                                                     "minute": dt.minute,
                                                     "day": dt.day,
                                                     "month": dt.month,
-                                                    "year": dt.day
+                                                    "year": dt.year
                                             })
                     in_free_time = False
 
@@ -203,19 +203,20 @@ def find_best_time_and_email(freq_times,emails):
 
             #make event to be added to calendar
             event = return_time(data_set, max(freq_times, key=freq_times.get))
+            print(event)
 
             #add to users calendars
-            for user in emails:
-                api_calls.insert_event(user,event)
+            #for user in emails:
+            #    api_calls.insert_event(user,event)
 
             return generate_best_time_email(data_set, max(freq_times, key=freq_times.get)-1)
 
-
+\
 
 if __name__ == '__main__':
     #main(["email1", "email2"])
     times = {1:2,2:1}
-    print(find_best_time_and_email(times))
+    print(find_best_time_and_email(times,["iuqwog"]))
     # json_file1 = get_freebusy_query("email1", datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
     # json_file2 = get_freebusy_query("email2", datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
     # print(json_file1)
