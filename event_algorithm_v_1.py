@@ -193,18 +193,21 @@ def main(email_list):
     create_free_times_json(calendars)
     print (return_free_times())
 
-def determine_ideal_time(freq_times):
+#@Params dict of time indexs and popularity
+#@Returns formatted email and uploads object
+def find_best_time_and_email(freq_times):
     if(os.path.isfile('free_times.json')):
         with open('free_times.json') as data_file:
             data_set = json.load(data_file)
-            generate_best_time_email(data_set, max(freq_times, key=freq_times.get))
             return_time(data_set, max(freq_times, key=freq_times.get)) # hi ophir
+            return generate_best_time_email(data_set, max(freq_times, key=freq_times.get))
+
 
 
 if __name__ == '__main__':
     #main(["email1", "email2"])
     times = {1:2,2:1,3:2}
-    determine_ideal_time(times)
+    find_best_time_and_email(times)
     # json_file1 = get_freebusy_query("email1", datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
     # json_file2 = get_freebusy_query("email2", datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
     # print(json_file1)
