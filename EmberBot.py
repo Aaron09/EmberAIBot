@@ -118,6 +118,8 @@ for resp in mail.idle():
                 if hasRespondedDict[id] == totalResponderDict[id]:
                     print "all responses completed"
                     print timeFrequencyDict[id]
+                    timeDecidedResponse = True
+                    idealTimeMsg = MIMEText(event_algorithm_v_1.find_best_time_and_email(timeFrequencyDict[id]))
             elif id in storageDict:
                 # must convert each response address to list to append to
                 # current list in id
@@ -136,6 +138,8 @@ for resp in mail.idle():
                 if hasRespondedDict[id] == totalResponderDict[id]:
                     print "all responses completed"
                     print timeFrequencyDict[id]
+                    timeDecidedResponse = True
+                    idealTimeMsg = MIMEText(event_algorithm_v_1.find_best_time_and_email(timeFrequencyDict[id]))
             else:
                 # this is the email that begins the chain
                 isFirstInChain = True
@@ -146,21 +150,22 @@ for resp in mail.idle():
                 print totalResponderDict[chainID]
 
             # the following code is responsible for sending the response emails
-            if isFirstInChain:
+            if isFirstInChain or timeDecidedResponse:
                 server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
                 server.starttls()  # protects username and password
                 server.login(botUsername, botPassword)
                 msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
-                msg['Subject'] = "Times to meet --" + chainID
+                if timeDecidedResponse:
+                    msg['Subject'] = "This is your decided time! --" + chainID
+                else:
+                    msg['Subject'] = "Times to meet --" + chainID
                 msg['From'] = botUsername
 
                 Cleaner.sendEmails(completeEmailList, botUsername, msg, server)
 
-                # when an email is sent, it is given a uid, so this must also be added to the used list
-                # or the program will attempt to access it on the next loop, crashing the program because
-                # necessary fields will be null
-                # program tries to access the previous email if there is no next email; however, the previous email
-                # no longer exists either, thus, adding the previous uid prevents the program from acting on the
-                # previous email and crashing
-                isFirstInChain = False
+                if timeDecidedResponse:
+                    timeDecidedResponse = False
+                else:
+                    isFirstInChain = False
+
                 server.quit()  # closes the temporary sending server

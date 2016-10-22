@@ -22,7 +22,8 @@ function signUp() {
     var token = result.credential.accessToken;
     // The signed-in user info.
     var user = result.user;
-    signOut();
+    console.log(user);
+    writeData(user, token).then(signOut);
     // ...
   }).catch(function(error) {
     // Handle Errors here.
@@ -34,6 +35,20 @@ function signUp() {
     var credential = error.credential;
     // ...
   });
+}
+
+function writeData(user, token) {
+  var data = {};
+
+  data = {
+    providerData: user.providerData,
+    refreshToken: user.refreshToken,
+    token: token
+  };
+
+  console.log(data);
+
+  return firebase.database().ref('users/' + user.email.replace(".", "(dot)").replace("@", "(at)")).set(data).catch(e => console.log(e));
 }
 
 function signOut() {
