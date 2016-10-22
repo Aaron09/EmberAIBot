@@ -36,6 +36,7 @@ receivedMail = False
 usedUIDS = []  # to prevent an email in the idle box to be used twice
 isFirstInChain = False
 isFirstResponse = True
+timeDecidedResponse = False
 
 for resp in mail.idle():
 
@@ -119,7 +120,6 @@ for resp in mail.idle():
                     print "all responses completed"
                     print timeFrequencyDict[id]
                     timeDecidedResponse = True
-                    idealTimeMsg = MIMEText(event_algorithm_v_1.find_best_time_and_email(timeFrequencyDict[id]))
             elif id in storageDict:
                 # must convert each response address to list to append to
                 # current list in id
@@ -139,7 +139,6 @@ for resp in mail.idle():
                     print "all responses completed"
                     print timeFrequencyDict[id]
                     timeDecidedResponse = True
-                    idealTimeMsg = MIMEText(event_algorithm_v_1.find_best_time_and_email(timeFrequencyDict[id]))
             else:
                 # this is the email that begins the chain
                 isFirstInChain = True
@@ -154,14 +153,21 @@ for resp in mail.idle():
                 server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
                 server.starttls()  # protects username and password
                 server.login(botUsername, botPassword)
-                msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
+                
+                if isFirstInChain:
+                    msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
+                else:
+                    msg = MIMEText(CalendarFinder.find_best_time_and_email(timeFrequencyDict[id]))
                 if timeDecidedResponse:
                     msg['Subject'] = "This is your decided time! --" + chainID
+                    recipients = totalResponderDict[id]
                 else:
                     msg['Subject'] = "Times to meet --" + chainID
+                    recipients = completeEmailList
+
                 msg['From'] = botUsername
 
-                Cleaner.sendEmails(completeEmailList, botUsername, msg, server)
+                Cleaner.sendEmails(recipients, botUsername, msg, server)
 
                 if timeDecidedResponse:
                     timeDecidedResponse = False

@@ -151,7 +151,7 @@ def generate_best_time_email(data_set, best_time):
 #OPHIR THIS IS FOR YOU!
 def return_time(data_set, best_time):
     free_zone_starts = []
-    free_zone_ends = [] 
+    free_zone_ends = []
     for free_zone in data_set['free_zones']:
         if free_zone['type'] == "start":
             free_zone_starts.append(datetime.datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute']).isoformat())
@@ -191,22 +191,23 @@ def main(email_list):
         calendars.append(create_calendar(json_file))
 
     create_free_times_json(calendars)
-    print (return_free_times())
+    return (return_free_times())
 
 #@Params dict of time indexs and popularity
 #@Returns formatted email and uploads object
-def find_best_time_and_email(freq_times):
+def find_best_time_and_email(freq_times,emails):
     if(os.path.isfile('free_times.json')):
         with open('free_times.json') as data_file:
             #clean data set
             data_set = json.load(data_file)
 
             #make event to be added to calendar
-            #event = return_time(data_set, max(freq_times, key=freq_times.get))
+            event = return_time(data_set, max(freq_times, key=freq_times.get))
 
             #add to users calendars
-            #for user in emails:
-            #    api_calls.insert_event(user,event)
+            for user in emails:
+                api_calls.insert_event(user,event)
+
             return generate_best_time_email(data_set, max(freq_times, key=freq_times.get)-1)
 
 

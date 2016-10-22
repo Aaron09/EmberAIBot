@@ -12,9 +12,9 @@ def readResponseForTimes(response):
             break
         elif potentialDigit.isdigit():
             if potentialDigit in responseDict:
-                responseDict[potentialDigit] += 1
+                responseDict[int(potentialDigit)] += 1
             else:
-                responseDict[potentialDigit] = 1
+                responseDict[int(potentialDigit)] = 1
     return responseDict
 
 def readResponseForTimesForExistingDict(responseDict, response):
@@ -22,10 +22,10 @@ def readResponseForTimesForExistingDict(responseDict, response):
         if potentialDigit == ">":
             break
         elif potentialDigit.isdigit():
-            if potentialDigit in responseDict:
-                responseDict[potentialDigit] += 1
+            if int(potentialDigit) in responseDict:
+                responseDict[int(potentialDigit)] += 1
             else:
-                responseDict[potentialDigit] = 1
+                responseDict[int(potentialDigit)] = 1
     return responseDict
 
 def parseDateForTime(date):
