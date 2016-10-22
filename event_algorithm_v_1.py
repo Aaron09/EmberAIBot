@@ -143,21 +143,20 @@ def generate_best_time_email(data_set, best_time):
         else:
             free_zone_ends.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
 
-    message = "Hello, \nthe final meeting time will be at \n"
+    message = "Hello, \nthe final meeting time will be from \n"
     message += free_zone_starts[best_time] + " to " + free_zone_ends[best_time] + "\n"
-
     return message
 
 #return the first free time and puts it in json to be added to calendar
 #OPHIR THIS IS FOR YOU!
 def return_time(data_set, best_time):
     free_zone_starts = []
-    free_zone_ends = []
+    free_zone_ends = [] 
     for free_zone in data_set['free_zones']:
         if free_zone['type'] == "start":
-            free_zone_starts.append(datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute']).isoformat())
+            free_zone_starts.append(datetime.datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute']).isoformat())
         else:
-            free_zone_ends.append(datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute']).isoformat())
+            free_zone_ends.append(datetime.datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute']).isoformat())
 
     event_body = {
         'summary': 'Test Event!',
@@ -197,13 +196,14 @@ def main(email_list):
 def determine_ideal_time(freq_times):
     if(os.path.isfile('free_times.json')):
         with open('free_times.json') as data_file:
-            generate_best_time_email(data_file, max(freq_times, key=freq_times.get))
-            return_time(data_file, max(freq_times, key=freq_times.get))
+            data_set = json.load(data_file)
+            generate_best_time_email(data_set, max(freq_times, key=freq_times.get))
+            return_time(data_set, max(freq_times, key=freq_times.get)) # hi ophir
 
 
 if __name__ == '__main__':
     #main(["email1", "email2"])
-    times = {1:4,2:1,3:2}
+    times = {1:2,2:1,3:2}
     determine_ideal_time(times)
     # json_file1 = get_freebusy_query("email1", datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
     # json_file2 = get_freebusy_query("email2", datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
