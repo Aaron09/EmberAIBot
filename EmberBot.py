@@ -159,7 +159,7 @@ for resp in mail.idle():
                 else:
                     msg = MIMEText(CalendarFinder.find_best_time_and_email(timeFrequencyDict[id], totalResponderDict[id]))
                 if timeDecidedResponse:
-                    msg['Subject'] = "This is your decided time! --" + chainID
+                    msg['Subject'] = "This is your decided time! --" + id
                     recipients = totalResponderDict[id]
                 else:
                     msg['Subject'] = "Times to meet --" + chainID
