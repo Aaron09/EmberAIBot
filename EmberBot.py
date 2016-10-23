@@ -153,11 +153,11 @@ for resp in mail.idle():
                 server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
                 server.starttls()  # protects username and password
                 server.login(botUsername, botPassword)
-                
+
                 if isFirstInChain:
                     msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
                 else:
-                    msg = MIMEText(CalendarFinder.find_best_time_and_email(timeFrequencyDict[id]))
+                    msg = MIMEText(CalendarFinder.find_best_time_and_email(timeFrequencyDict[id], totalResponderDict[id]))
                 if timeDecidedResponse:
                     msg['Subject'] = "This is your decided time! --" + chainID
                     recipients = totalResponderDict[id]
