@@ -47,7 +47,7 @@ def checkTime(calendar_list):
         in_free_time = False
 
         #These are simply dummy times and will be changed once we check sections larger than 24h
-        start = datetime.datetime(2016,9,20)
+        start = datetime.datetime.utcnow()
         end = start + timedelta(days=1)
 
         for dt in rrule.rrule(rrule.MINUTELY, dtstart=start, until=end):
