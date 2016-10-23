@@ -87,9 +87,9 @@ def checkTime(calendar_list):
                                             "type": "end",
                                             "hour": 23,
                                             "minute": 59,
-                                            "day":5,
-                                            "month":12,
-                                            "year":2016
+                                            "day":dt.day,
+                                            "month":dt.month,
+                                            "year":dt.year
                                     })
 
         #The Json Object we return.
