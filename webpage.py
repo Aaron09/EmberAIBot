@@ -2,12 +2,12 @@ from flask import Flask
 import EmberBot
 import os
 
-app = Flask(__name__, static_url_path='index.html')
+app = Flask(__name__, static_url_path='')
 
 @app.route("/")
 def hello():
 	os.system("EmberBot.py")
-	return render_template('hello.html', name=name)
+	return render_template('index.html', name=name)
 	#return app.send_from_directory
 	#return app.send_static_file('index.html')
 	#return "Hello World!"
