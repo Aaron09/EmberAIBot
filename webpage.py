@@ -2,7 +2,7 @@ from flask import Flask
 #import EmberBot
 import os
 
-app = Flask(__name__)#, static_url_path='')
+app = Flask(__name__, static_url_path='')
 
 @app.route("/")
 def root():
