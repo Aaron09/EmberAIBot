@@ -1,4 +1,4 @@
-from flask import Flask, requests
+from flask import Flask
 #import EmberBot
 import os
 
@@ -7,8 +7,8 @@ app = Flask(__name__, static_url_path='')
 @app.route("/")
 def root():
 	#os.system("EmberBot.py")
-	#return render_template('index.html', name=name)
-	#return app.send_from_directory
+	#return app.render_template('index.html', name=name)
+	#return app.send_from_directory('index.html')
 	return app.send_static_file('index.html')
 	#return "Hello World!"
 
