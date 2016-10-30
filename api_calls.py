@@ -11,6 +11,8 @@ from oauth2client import tools
 import datetime
 import pprint as pp
 
+from firebase import firebase
+
 import argparse
 
 parser = argparse.ArgumentParser(parents=[tools.argparser])
@@ -20,32 +22,20 @@ SCOPES = 'https://www.googleapis.com/auth/calendar'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Ember Google Calendar API Access'
 
+FIREBASE_SECRET = 'lrr9Q2GQI7jqZEx00m3SZBSwzyP8Ym2bi4TufPJT'
+
 
 def get_credentials(user):
-    """Gets valid user credentials from storage.
+    # TODO: CHANGE AUTHORIZATION TO NOT BE PUBLIC
+    authentication = firebase.FirebaseAuthentication(FIREBASE_SECRET, 'emberuiucbot@gmail.com')
 
-    If nothing has been stored, or if the stored credentials are invalid,
-    the OAuth2 flow is completed to obtain the new credentials.
+    database = firebase.FirebaseApplication('https://ember-ai-146020.firebaseio.com', authentication=authentication)
 
-    Returns:
-        Credentials, the obtained credential.
-    """
-    home_dir = os.path.expanduser('~')
-    credential_dir = os.path.join(home_dir, '.credentials')
-    if not os.path.exists(credential_dir):
-        os.makedirs(credential_dir)
-    credential_path = os.path.join(credential_dir,
-                                   'account-credentials-' + user + '.json')
+    token = database.get('/users', user.replace('.', '(dot)').replace('@', '(at)'))
+    credentials = client.AccessTokenCredentials(token['token'], 'my-user-agent/1.0')
+    # credentials = client.GoogleCredentials(token['token'], "295894273459-m5r8e3572ru6vs7tlvjpor2o99bv7g1l.apps.googleusercontent.com", "BQhM6U69IS0XHK8itNb0vjpV", token['refreshToken'], 1, "https://accounts.google.com/o/oauth2/token", 'my-user-agent/1.0')
+    # print(credentials.to_json()) TODO: remove (and above)
 
-    store = oauth2client.file.Storage(credential_path)  # stores the users credentials --> TODO: put in database
-    credentials = store.get()
-    if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
-        flow.user_agent = APPLICATION_NAME
-
-        credentials = tools.run_flow(flow, store, flags)
-
-        print('Storing credentials to ' + credential_path)
     return credentials
 
 
@@ -55,7 +45,7 @@ def get_freebusy_query(user, time_min, time_max):
     Returns:
         A json that contains all of the times in which the user is busy.
     """
-    credentials = get_credentials(user)
+    credentials = get_credentials(user) # string
     http = credentials.authorize(httplib2.Http())
 
     service = discovery.build('calendar', 'v3', http=http)
@@ -80,6 +70,8 @@ def insert_event(user, request_body):
     """
     credentials = get_credentials(user)
     http = credentials.authorize(httplib2.Http())
+    # credentials.refresh(http) TODO: remove
+    # print(credentials.to_json()) TODO: remove
 
     service = discovery.build('calendar', 'v3', http=http)
 
@@ -89,7 +81,7 @@ def insert_event(user, request_body):
 # Currently used to test both functionalities with dummy values
 if __name__ == '__main__':
     # Test for freebusy method
-    free_busy = get_freebusy_query("test", datetime.datetime.utcnow().isoformat() + 'Z',
+    free_busy = get_freebusy_query("emberuiucbot@gmail.com", datetime.datetime.utcnow().isoformat() + 'Z',
                        (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
     pp.pprint(free_busy)
 
@@ -105,4 +97,4 @@ if __name__ == '__main__':
             'dateTime': (datetime.datetime.utcnow() + datetime.timedelta(hours=2)).isoformat() + 'Z',
         }
     }
-    insert_event("test", dummy_event_body)
+    insert_event("emberuiucbot@gmail.com", dummy_event_body)

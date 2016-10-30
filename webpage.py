@@ -1,13 +1,18 @@
 from flask import Flask
-app = Flask(__name__)
-import EmberBot
+#import EmberBot
 import os
 
+app = Flask(__name__, static_url_path='')
+
 @app.route("/")
-def hello():
-	os.system("EmberBot.py")
+def root():
+	#os.system("EmberBot.py")
+	#return app.render_template('index.html', name=name)
+	#return app.send_from_directory('index.html')
 	return app.send_static_file('index.html')
-	return "Hello World!"
+	#return "Hello World!"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port='5005')
+
+#app.run(host='0.0.0.0', port='5005')

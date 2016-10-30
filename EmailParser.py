@@ -6,8 +6,24 @@
 ###########################
 
 def readResponseForTimes(response):
+    if type(response) is not str:
+        message = response[0].as_string(unixfrom=True)
+        message = str(message)
+        pastUTF8 = False
+        trueResponse = ""
+        for i in range(0,len(message)):
+            if message[i-1] == "-" and message[i] == "8":
+                pastUTF8 = True
+            elif message[i] == "O" and message[i+1] == "n":
+                pastUTF8 = False
+                break
+            elif pastUTF8:
+                trueResponse += message[i]
+    else:
+        trueResponse = response
+    trueResponse = trueResponse.strip()
     responseDict = {}
-    for potentialDigit in response:
+    for potentialDigit in trueResponse:
         if potentialDigit == ">":
             break
         elif potentialDigit.isdigit():
@@ -18,7 +34,23 @@ def readResponseForTimes(response):
     return responseDict
 
 def readResponseForTimesForExistingDict(responseDict, response):
-    for potentialDigit in response:
+    if type(response) is not str:
+        message = response[0].as_string(unixfrom=True)
+        message = str(message)
+        pastUTF8 = False
+        trueResponse = ""
+        for i in range(0,len(message)):
+            if message[i-1] == "-" and message[i] == "8":
+                pastUTF8 = True
+            elif message[i] == "O" and message[i+1] == "n":
+                pastUTF8 = False
+                break
+            elif pastUTF8:
+                trueResponse += message[i]
+    else:
+        trueResponse = response
+    trueResponse = trueResponse.strip()
+    for potentialDigit in trueResponse:
         if potentialDigit == ">":
             break
         elif potentialDigit.isdigit():

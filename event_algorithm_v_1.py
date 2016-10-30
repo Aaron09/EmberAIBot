@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from pytz import timezone
 import pytz
 from api_calls import *
+import api_calls as CalendarHandler
 
 class time_slot(object):
         def __init__(self,in_start_time,in_end_time):
@@ -206,14 +207,17 @@ def find_best_time_and_email(freq_times,emails):
             data_set = json.load(data_file)
 
             #make event to be added to calendar
-            event = return_time(data_set, max(freq_times, key=freq_times.get)-1)
-            print(event)
+
+            idealTime = max(freq_times, key=freq_times.get)-1
+            event = return_time(data_set, idealTime)
+
+            #print(event)
 
             #add to users calendars
-            #for user in emails:
-            #    api_calls.insert_event(user,event)
+            for user in emails:
+               CalendarHandler.insert_event(user,event)
 
-            return generate_best_time_email(data_set, max(freq_times, key=freq_times.get)-1)
+            return generate_best_time_email(data_set, idealTime)
 
 
 if __name__ == '__main__':
