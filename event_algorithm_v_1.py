@@ -99,9 +99,42 @@ def checkTime(calendar_list):
         #The Json Object we return.
         return {
                 'day': 1,
-                'free_zones': free_zones_JSON
+                'free_zones': clean_up_times(free_zones_JSON)
         }
 
+def clean_up_times(free_zones_JSON):
+    free_zone_starts = []
+    free_zone_ends = []
+    for free_zone in free_zones_JSON:
+        start_end = datetime.datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute'])
+        
+        if free_zone['type'] == "start":
+            free_zone_starts.append(start_end)
+        else:
+            free_zone_ends.append(start_end)
+
+    free_start_end = zip(free_zone_starts,free_zone_ends)
+    final_start_end = []
+    for free_era in free_start_end:
+        time_diff = free_era[1]-free_era[0]
+        if divmod(time_diff.days * 86400 + time_diff.seconds , 60)[0] > 10:
+            final_start_end.append({
+                                                    "type": "start",
+                                                    "hour": free_era[0].hour,
+                                                    "minute": free_era[0].minute,
+                                                    "day": free_era[0].day,
+                                                    "month": free_era[0].month,
+                                                    "year": free_era[0].year
+                                            })
+            final_start_end.append({
+                                                    "type": "end",
+                                                    "hour": free_era[1].hour,
+                                                    "minute": free_era[1].minute,
+                                                    "day": free_era[1].day,
+                                                    "month": free_era[1].month,
+                                                    "year": free_era[1].year
+                                            })
+    return (final_start_end)
 
 #Params: A list of calendars
 #Returns: If all the calendars are free at the time checked
@@ -124,31 +157,38 @@ def create_free_times_json(calendar_list):
     with open('free_times.json', 'w') as outfile:
             json.dump(checkTime(calendar_list), outfile)
 
-# creates email message with all the free times
-def generate_email_content(data_set):
+def utc_to_local(utc_dt):
+    local_tz = pytz.timezone('US/Central')
+    local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(local_tz)
+    return local_tz.normalize(local_dt) # .normalize might be unnecessary
+
+def break_up_freezones(data_set):
     free_zone_starts = []
     free_zone_ends = []
     for free_zone in data_set['free_zones']:
+        start_end = datetime.datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute'])
+        localized = utc_to_local(start_end)
+        string_localized = localized.strftime("%m-%d-%Y %I:%M %p")
         if free_zone['type'] == "start":
-            free_zone_starts.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
+            free_zone_starts.append(string_localized)
+            #free_zone_starts.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
         else:
-            free_zone_ends.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
+            free_zone_ends.append(string_localized)
+            #free_zone_ends.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
+    return (free_zone_starts, free_zone_ends)
+
+# creates email message with all the free times
+def generate_email_content(data_set):
+    free_zones = break_up_freezones(data_set)
     message = "Hello, \nBoth parties have the following time slots avaiable to meet: \n"
-    for i in range(len(free_zone_starts)):
-        message += free_zone_starts[i] + " to " + free_zone_ends[i] + "\n"
+    for i in range(len(free_zones[0])):
+        message += free_zones[0][i] + " to " + free_zones[1][i] + "\n"
     return message
 
 def generate_best_time_email(data_set, best_time):
-    free_zone_starts = []
-    free_zone_ends = []
-    for free_zone in data_set['free_zones']:
-        if free_zone['type'] == "start":
-            free_zone_starts.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
-        else:
-            free_zone_ends.append(str(free_zone["hour"]) + ":" + str(free_zone['minute']).zfill(2))
-
+    (free_zone_starts, free_zone_ends) = break_up_freezones(data_set)
     message = "Hello, \nthe final meeting time will be from \n"
-    message += free_zone_starts[best_time] + " to " + free_zone_ends[best_time] + "\n"
+    message += free_zonez[0][best_time] + " to " + free_zones[1][best_time] + "\n"
     return message
 
 #return the first free time and puts it in json to be added to calendar
