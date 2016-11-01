@@ -2,6 +2,7 @@ from __future__ import print_function
 import httplib2
 import os
 import json
+
 from apiclient import discovery
 import oauth2client
 from oauth2client import client
@@ -37,6 +38,12 @@ def get_credentials(user):
     # print(credentials.to_json()) TODO: remove (and above)
 
     return credentials
+
+
+def credientials_exist(user):
+    authentication = firebase.FirebaseAuthentication(FIREBASE_SECRET, 'emberuiucbot@gmail.com')
+    database = firebase.FirebaseApplication('https://ember-ai-146020.firebaseio.com', authentication=authentication)
+    return not database.get('/users', user.replace('.', '(dot)').replace('@', '(at)')) is None
 
 
 def get_freebusy_query(user, time_min, time_max):
@@ -80,21 +87,24 @@ def insert_event(user, request_body):
 
 # Currently used to test both functionalities with dummy values
 if __name__ == '__main__':
-    # Test for freebusy method
-    free_busy = get_freebusy_query("emberuiucbot@gmail.com", datetime.datetime.utcnow().isoformat() + 'Z',
-                       (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
-    pp.pprint(free_busy)
-
-    # Test for inserting an event (currently inserts an hour long event 1 hour from now)
-    dummy_event_body = {
-        'summary': 'Test Event!',
-        'location': '201 N Goodwin Ave, Urbana, IL 61801',
-        'description': 'Check out this cool test event!',
-        'start': {
-          'dateTime': (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).isoformat() + 'Z',
-        },
-        'end': {
-            'dateTime': (datetime.datetime.utcnow() + datetime.timedelta(hours=2)).isoformat() + 'Z',
-        }
-    }
-    insert_event("emberuiucbot@gmail.com", dummy_event_body)
+    # # Test for freebusy method
+    # free_busy = get_freebusy_query("emberuiucbot@gmail.com", datetime.datetime.utcnow().isoformat() + 'Z',
+    #                    (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
+    # pp.pprint(free_busy)
+    #
+    # # Test for inserting an event (currently inserts an hour long event 1 hour from now)
+    # dummy_event_body = {
+    #     'summary': 'Test Event!',
+    #     'location': '201 N Goodwin Ave, Urbana, IL 61801',
+    #     'description': 'Check out this cool test event!',
+    #     'start': {
+    #       'dateTime': (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).isoformat() + 'Z',
+    #     },
+    #     'end': {
+    #         'dateTime': (datetime.datetime.utcnow() + datetime.timedelta(hours=2)).isoformat() + 'Z',
+    #     }
+    # }
+    # insert_event("emberuiucbot@gmail.com", dummy_event_body)
+    #
+    print(credientials_exist("emberuiucbot@gmail.com"))
+    print(credientials_exist("pranayiscool"))
