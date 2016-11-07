@@ -46,6 +46,19 @@ def credientials_exist(user):
     return not database.get('/users', user.replace('.', '(dot)').replace('@', '(at)')) is None
 
 
+def get_timezone(user):
+    """
+    Returns the users timezone. Data types are of the following format:
+        http://www.iana.org/time-zones
+    """
+    credentials = get_credentials(user)
+    http = credentials.authorize(httplib2.Http())
+
+    service = discovery.build('calendar', 'v3', http=http)
+    timezone = service.settings().get(setting='timezone').execute()
+
+    return timezone['value']
+
 def get_freebusy_query(user, time_min, time_max):
     """Gets the freebusy data from a calendar between time_min and time_max.
 
@@ -108,3 +121,4 @@ if __name__ == '__main__':
     #
     print(credientials_exist("emberuiucbot@gmail.com"))
     print(credientials_exist("pranayiscool"))
+    print(get_timezone("emberuiucbot@gmail.com"))
