@@ -35,7 +35,7 @@ def get_credentials(user):
     token = database.get('/users', user.replace('.', '(dot)').replace('@', '(at)'))
     credentials = client.AccessTokenCredentials(token['token'], 'my-user-agent/1.0')
     # credentials = client.GoogleCredentials(token['token'], "295894273459-m5r8e3572ru6vs7tlvjpor2o99bv7g1l.apps.googleusercontent.com", "BQhM6U69IS0XHK8itNb0vjpV", token['refreshToken'], 1, "https://accounts.google.com/o/oauth2/token", 'my-user-agent/1.0')
-    # print(credentials.to_json()) TODO: remove (and above)
+    # print(credentials.to_json()) # TODO: remove (and above)
 
     return credentials
 
@@ -59,7 +59,28 @@ def get_timezone(user):
 
     return timezone['value']
 
-def get_freebusy_query(user, time_min, time_max):
+
+def get_all_freebusy_queries(user, time_min, time_max):
+    """
+    Gets the freebusy queries of all the active calendars of a user
+    between time_min and time_max
+    """
+    credentials = get_credentials(user)  # string
+    http = credentials.authorize(httplib2.Http())
+
+    service = discovery.build('calendar', 'v3', http=http)
+    calendar_list = service.calendarList().list().execute()
+
+    all_calendars_json = {}
+
+    for calendar in calendar_list['items']:
+        if 'selected' in calendar:
+            all_calendars_json[calendar['summary']] = json.loads(
+                get_freebusy_query(user, time_min, time_max, calendar['id']))
+    return json.dumps(all_calendars_json, indent=2)
+
+
+def get_freebusy_query(user, time_min, time_max, calendar_id):
     """Gets the freebusy data from a calendar between time_min and time_max.
 
     Returns:
@@ -75,7 +96,7 @@ def get_freebusy_query(user, time_min, time_max):
         "timeMax": time_max,
         "items": [
             {
-                "id": "primary"
+                "id": calendar_id
             }
         ]
     }
@@ -95,6 +116,7 @@ def insert_event(user, request_body):
 
     service = discovery.build('calendar', 'v3', http=http)
 
+    # TODO: how do we determine the calendarId?
     service.events().insert(calendarId='primary', body=request_body).execute()
 
 
@@ -121,4 +143,6 @@ if __name__ == '__main__':
     #
     print(credientials_exist("emberuiucbot@gmail.com"))
     print(credientials_exist("pranayiscool"))
-    print(get_timezone("emberuiucbot@gmail.com"))
+    # print(get_timezone("emberuiucbot@gmail.com"))
+    print(get_all_freebusy_queries("ophirsneh@gmail.com", datetime.datetime.utcnow().isoformat() + 'Z',
+                             (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z'))
