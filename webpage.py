@@ -20,6 +20,8 @@ def root():
 def update(user):
 	print user
 	# makes a file called user
+	if not os.path.exists("new_signups"):
+		os.makedirs("new_signups")
 	open("new_signups/{}".format(user), 'a').close()
 	return "made file: {}".format(user)
 
