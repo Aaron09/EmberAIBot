@@ -39,8 +39,9 @@ class calendar(object):
         #Params: parsed JSON file for individual user (contains all events)
         #adds all events as objects from provided calendar data set to the calender object
         def add_events(self, data_set):
-                for time_set in data_set['calendars']['primary']['busy']:
-                        self.my_events.append(event(datetime.datetime.strptime(time_set['end'], "%Y-%m-%dT%H:%M:%Sz"), datetime.datetime.strptime(time_set['start'],"%Y-%m-%dT%H:%M:%Sz")))
+                for calendar_id in data_set['calendars']:
+                    for time_set in calendar_id['busy']:
+                            self.my_events.append(event(datetime.datetime.strptime(time_set['end'], "%Y-%m-%dT%H:%M:%Sz"), datetime.datetime.strptime(time_set['start'],"%Y-%m-%dT%H:%M:%Sz")))
 
 #Params: 2 calendar objects
 #Returns: A list of size 2 lists containing start of that free block and the end of that free block.
@@ -107,7 +108,7 @@ def clean_up_times(free_zones_JSON):
     free_zone_ends = []
     for free_zone in free_zones_JSON:
         start_end = datetime.datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute'])
-        
+
         if free_zone['type'] == "start":
             free_zone_starts.append(start_end)
         else:
@@ -231,9 +232,11 @@ def return_free_times():
 def main(email_list):
     calendars = []
     for email in email_list:
-        json_file = get_freebusy_query(email, datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
-        print(json_file)
-        calendars.append(create_calendar(json_file))
+        json_file = get_all_freebusy_queries(email, datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
+        calendar_new = calendar()
+        for cal in json_file:
+            calendar_new.add_events(json_file[cal])
+        calendars.append(calendar_new)
 
     create_free_times_json(calendars)
     return (return_free_times())
