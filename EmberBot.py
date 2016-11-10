@@ -15,11 +15,14 @@ import smtplib   # used for sending the response email
 from email.mime.text import MIMEText
 import event_algorithm_v_1 as CalendarFinder
 import EmailParser as Parser
+import JobHandler
 
 storageDict = {}
 hasRespondedDict = {}
 totalResponderDict = {}
 timeFrequencyDict = {}
+jobDict = {} # holds the unprocessable jobs because of verification
+usersNotSignedUpDict = {}
 
 # to hide the username and password on github
 with open("BotCredentials") as file:
@@ -37,60 +40,51 @@ usedUIDS = []  # to prevent an email in the idle box to be used twice
 isFirstInChain = False
 isFirstResponse = True
 timeDecidedResponse = False
+chainIDList = []
+invalidUserMessage = "please go to the Ember website and sign up!\nOnce you've done this, reply to this email letting me know you've signed up!"
 
 for resp in mail.idle():
 
-    # resp contains an asterisk, uid, and "exists" message associated with each email
+    # takes in respList, needs to return uid, usedUIDS, receivedMail
     respList = resp.split()
-    for i in range(0, len(respList)):   # looks for the uid
-        potentialUID = respList[i]
-        if potentialUID.isdigit() and potentialUID not in usedUIDS and respList[i+1] == "EXISTS":
-            uid = potentialUID
-            usedUIDS.append(str(uid))
-            receivedMail = True
+    uid, usedUIDS, receivedMail = Cleaner.parseRespList(respList, usedUIDS)
+    # resp contains an asterisk, uid, and "exists" message associated with each email
 
     if receivedMail:
+
+        # Can the input processing be broken into another file?
+
         properToField = True
-
-        # a temporary mail server is created to fetch emails, since the original server must remain idling
-        tempMailServer = imaplib.IMAP4_SSL("imap.gmail.com")
-        tempMailServer.login(botUsername, botPassword)
-        tempMailServer.select("Inbox")
-        status, data = tempMailServer.fetch(uid, '(RFC822)')  # fetches the currently most recent email
-        msg = email.message_from_string(data[0][1])  # pulls the message information from the email data
-
-        # gathers the text from the "from" and "to" fields of the email
-        varFrom = msg["From"]
-        varTo = msg["To"]
-        subjectKey = msg["Subject"]
-        time = Parser.parseDateForTime(msg["Date"])
-        body = msg.get_payload()
-
-        # removes brackets around email address / cleans it up
-        varFrom = Cleaner.cleanEmailString(varFrom)
-        varTo = Cleaner.cleanEmailString(varTo)
-
-        # emails are fetched with their associated username as well, not just the email address
-        # so we must remove all text other than email address
-        varFrom = Cleaner.onlyGetAddress(varFrom.split())
-
-        incompleteEmailList = Cleaner.setIncompleteEmailList(varTo, varFrom)
-        incompleteEmailList = Cleaner.removeRedundantAddresses(incompleteEmailList)
-        completeEmailList = Cleaner.selectEmailAddresses(incompleteEmailList)
-
-        # Tests to ensure the "from" and "to" fields are correctly parsed
-        Cleaner.fromTest(varFrom)
-        Cleaner.toTest(completeEmailList)
-        # end tests
-
-        # generates unique id for email chain
-        chainID = Cleaner.identifier(subjectKey, varFrom, time)
-
+        # takes in uid
+        # need to return completeEmailList, varFrom, varTo, time, body, subjectKey
+        completeEmailList, varFrom, varTo, body, time, subjectKey = Parser.parseEmailForAll(uid)
         receivedMail = False
-        tempMailServer.close()  # closes the temporary server
 
-        # function to detect email chain id in received email
-        id = Parser.findIdInSubjectLine(subjectKey)
+        # generates unique id for each email chain
+        chainID = Parser.findIdInSubjectLine(subjectKey)
+        if chainID in storageDict:
+            isFirstInChain = False
+        else:
+            chainID = Cleaner.identifier(subjectKey, varFrom, time)
+            isFirstInChain = True
+
+        # each time an email is received that is part of an existing chain, we
+        # check if that job can be processed
+        # this doesn't work. But it shows the theory behind it. I need a way
+        # to know when someone know signs up for the service, then I can check
+        # if they are a part of a job I am waiting to complete, if so, I check if
+        # I can complete that job.
+
+        # Ophir is making the way to tell me if someone new signs up for the service
+        # So I need a way to wait and call the method when someone knew signs up
+        # Could I have an eternally running "while(True)" that checks every so often
+        # if someone knew has signed up, and if so, how do I then complete the rest
+        # of what needs to be done.
+
+        if chainID in jobDict:
+            if Parser.checkAllForVerification(totalResponderDict[chainID]):
+                jobType = JobHandler.getJob(jobDict, chainID)
+                JobHandler.executeJob(jobDict, chainID, botUsername, botPassword, totalResponderDict)
 
         # if the email is sent directly to the bot (via the "TO" field),
         # the bot will not respond
@@ -99,46 +93,49 @@ for resp in mail.idle():
                 if botUsername in potentialEmail:
                     properToField = False
 
+        # Response handling code is too complicated and long in this file.
+        # I need to break it into another file or something alone those lines.
+
         # if the bot is not in the "TO" field
         if properToField:
-            if id in storageDict and isFirstResponse:
+            if chainID in storageDict and isFirstResponse:
                 isFirstInChain = False
                 isFirstResponse = False
                 # begins the list of who has responded
-                hasRespondedDict[id] = [varFrom]
-                hasRespondedDict[id].sort()
-                print hasRespondedDict[id]
+                hasRespondedDict[chainID] = [varFrom]
+                hasRespondedDict[chainID].sort()
+                print hasRespondedDict[chainID]
                 # total list of people who need to respond
-                totalResponderDict[id].sort()
-                print totalResponderDict[id]
+                print totalResponderDict[chainID]
 
                 # gathers the preferred times of the responder
-                timeFrequencyDict[id] = Parser.readResponseForTimes(body)
+                timeFrequencyDict[chainID] = Parser.readResponseForTimes(body)
 
-                # if everyone has responded
-                if hasRespondedDict[id] == totalResponderDict[id]:
+                # if everyone has responded, this triggers if the person is setting
+                # up an event with themself
+                if hasRespondedDict[chainID] == totalResponderDict[chainID]:
                     print "all responses completed"
-                    print timeFrequencyDict[id]
+                    print timeFrequencyDict[chainID]
                     timeDecidedResponse = True
-            elif id in storageDict:
+            elif chainID in storageDict:
                 # must convert each response address to list to append to
                 # current list in id
-                tempRespList = hasRespondedDict[id]
-                tempRespList.append(varFrom)
-                hasRespondedDict[id] = tempRespList
-                # sort each time for comparison to total list
-                hasRespondedDict[id].sort()
-                print hasRespondedDict[id]
-                totalResponderDict[id].sort()
-                print totalResponderDict[id]
+                if not varFrom in hasRespondedDict:
+                    tempResponseList = hasRespondedDict[chainID]
+                    tempResponseList.append(varFrom)
+                    hasRespondedDict[chainID] = tempResponseList
+                    # sort each time for comparison to total list
+                    hasRespondedDict[chainID].sort()
+                    print hasRespondedDict[chainID]
+                    print totalResponderDict[chainID]
 
-                # gathers the preferred times of the responder
-                timeFrequencyDict[id] = Parser.readResponseForTimesForExistingDict(timeFrequencyDict[id], body)
+                    # gathers the preferred times of the responder
+                    timeFrequencyDict[chainID] = Parser.readResponseForTimesForExistingDict(timeFrequencyDict[chainID], body)
 
-                if hasRespondedDict[id] == totalResponderDict[id]:
-                    print "all responses completed"
-                    print timeFrequencyDict[id]
-                    timeDecidedResponse = True
+                    if hasRespondedDict[chainID] == totalResponderDict[chainID]:
+                        print "all responses completed"
+                        print timeFrequencyDict[chainID]
+                        timeDecidedResponse = True
             else:
                 # this is the email that begins the chain
                 isFirstInChain = True
@@ -148,30 +145,40 @@ for resp in mail.idle():
                 totalResponderDict[chainID].sort()
                 print totalResponderDict[chainID]
 
+
+            # Can the output processing be broken into another file?
+
             # the following code is responsible for sending the response emails
             if isFirstInChain or timeDecidedResponse:
-                server = smtplib.SMTP('smtp.gmail.com', 587)  # creates a gmail server through which to send emails
-                server.starttls()  # protects username and password
+                # creates a gmail server through which to send emails
+                server = JobHandler.startSendingServer(botUsername, botPassword)
+                server.starttls()
                 server.login(botUsername, botPassword)
 
+                executable = True
+
                 if isFirstInChain:
-                    msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
+                    if Parser.checkAllForVerification(completeEmailList):
+                        print "All Validated"
+                        msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
+                        msg['Subject'] = "Times to meet --" + chainID
+                        isFirstInChain = False
+                    else:
+                        print "Not all addresses validated. Job being saved."
+                        invalidUsers = Parser.grabUnverified(usersNotSignedUpDict, completeEmailList, chainID)
+                        jobDict = JobHandler.saveJob(jobDict, chainID, completeEmailList, "send_times")
+                        msg = MIMEText(Parser.organizeUnverifiedForBody(invalidUsers[chainID]) + invalidUserMessage, "plain")
+                        msg["subject"] = "Not all users signed up for Ember --" + chainID
+                        Cleaner.sendEmails(invalidUsers[chainID], botUsername, msg, server)
+                        executable = False
+                        isFirstInChain = False
                 else:
-                    msg = MIMEText(CalendarFinder.find_best_time_and_email(timeFrequencyDict[id], totalResponderDict[id]))
-                if timeDecidedResponse:
-                    msg['Subject'] = "This is your decided time! --" + id
-                    recipients = totalResponderDict[id]
-                else:
-                    msg['Subject'] = "Times to meet --" + chainID
-                    recipients = completeEmailList
-
-                msg['From'] = botUsername
-
-                Cleaner.sendEmails(recipients, botUsername, msg, server)
-
-                if timeDecidedResponse:
+                    msg = MIMEText(CalendarFinder.find_best_time_and_email(timeFrequencyDict[chainID], totalResponderDict[chainID]))
+                    msg['Subject'] = "This is your decided time! --" + chainID
                     timeDecidedResponse = False
-                else:
-                    isFirstInChain = False
 
-                server.quit()  # closes the temporary sending server
+                if executable:
+                    msg['From'] = botUsername
+                    Cleaner.sendEmails(completeEmailList, botUsername, msg, server)
+
+                JobHandler.terminateServer(server) # closes the temporary sending server
