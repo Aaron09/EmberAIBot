@@ -107,7 +107,7 @@ def clean_up_times(free_zones_JSON):
     free_zone_ends = []
     for free_zone in free_zones_JSON:
         start_end = datetime.datetime(free_zone['year'], free_zone['month'], free_zone['day'] ,free_zone["hour"], free_zone['minute'])
-        
+
         if free_zone['type'] == "start":
             free_zone_starts.append(start_end)
         else:
@@ -231,9 +231,11 @@ def return_free_times():
 def main(email_list):
     calendars = []
     for email in email_list:
-        json_file = get_freebusy_query(email, datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
-        print(json_file)
-        calendars.append(create_calendar(json_file))
+        json_file = get_all_freebusy_query(email, datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
+        calendar_new = calendar()
+        for cal in json_file:
+            calendar_new.add_events(json.loads(json_file[cal]))
+        calendars.append(calendar_new)
 
     create_free_times_json(calendars)
     return (return_free_times())
