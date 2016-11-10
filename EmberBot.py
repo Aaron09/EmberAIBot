@@ -16,6 +16,11 @@ from email.mime.text import MIMEText
 import event_algorithm_v_1 as CalendarFinder
 import EmailParser as Parser
 import JobHandler
+import sys
+import time
+import logging
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 storageDict = {}
 hasRespondedDict = {}
@@ -43,6 +48,23 @@ timeDecidedResponse = False
 chainIDList = []
 invalidUserMessage = "please go to the Ember website and sign up!\nOnce you've done this, reply to this email letting me know you've signed up!"
 
+logging.basicConfig(level=logging.ERROR)
+
+class MyEventHandler(FileSystemEventHandler):
+    def __init__(self, observer):
+        self.observer = observer
+
+    def on_created(self, event):
+        newEmail = event.src_path[event.src_path.index("/")+1:len(event.src_path)]
+        if not event.is_directory:
+            JobHandler.eventExecute(newEmail, totalResponderDict, jobDict, botUsername, botPassword)
+
+path = "new_signups/"
+observer = Observer()
+event_handler = MyEventHandler(observer)
+observer.schedule(event_handler, path, recursive=True)
+observer.start()
+
 for resp in mail.idle():
 
     # takes in respList, needs to return uid, usedUIDS, receivedMail
@@ -68,6 +90,13 @@ for resp in mail.idle():
             chainID = Cleaner.identifier(subjectKey, varFrom, time)
             isFirstInChain = True
 
+        if Parser.hasNotSignedUpTag(subjectKey):
+            hasNotSignedUpReply = True
+            print "hasn't signed up"
+        else:
+            hasNotSignedUpReply = False
+            print "has signed up"
+
         # each time an email is received that is part of an existing chain, we
         # check if that job can be processed
         # this doesn't work. But it shows the theory behind it. I need a way
@@ -81,104 +110,107 @@ for resp in mail.idle():
         # if someone knew has signed up, and if so, how do I then complete the rest
         # of what needs to be done.
 
-        if chainID in jobDict:
-            if Parser.checkAllForVerification(totalResponderDict[chainID]):
-                jobType = JobHandler.getJob(jobDict, chainID)
-                JobHandler.executeJob(jobDict, chainID, botUsername, botPassword, totalResponderDict)
+        # if chainID in jobDict and hasNotSignedUpReply:
+        #     print "Checking for Verification"
+        #     if Parser.checkAllForVerification(totalResponderDict[chainID]):
+        #         jobType = JobHandler.getJob(jobDict, chainID)
+        #         JobHandler.executeJob(jobDict, chainID, botUsername, botPassword)
 
-        # if the email is sent directly to the bot (via the "TO" field),
-        # the bot will not respond
-        if isFirstInChain:
-            for potentialEmail in varTo.split():
-                if botUsername in potentialEmail:
-                    properToField = False
+        if not hasNotSignedUpReply:
+            # if the email is sent directly to the bot (via the "TO" field),
+            # the bot will not respond
+            if isFirstInChain:
+                for potentialEmail in varTo.split():
+                    if botUsername in potentialEmail:
+                        properToField = False
 
-        # Response handling code is too complicated and long in this file.
-        # I need to break it into another file or something alone those lines.
+            # Response handling code is too complicated and long in this file.
+            # I need to break it into another file or something alone those lines.
 
-        # if the bot is not in the "TO" field
-        if properToField:
-            if chainID in storageDict and isFirstResponse:
-                isFirstInChain = False
-                isFirstResponse = False
-                # begins the list of who has responded
-                hasRespondedDict[chainID] = [varFrom]
-                hasRespondedDict[chainID].sort()
-                print hasRespondedDict[chainID]
-                # total list of people who need to respond
-                print totalResponderDict[chainID]
-
-                # gathers the preferred times of the responder
-                timeFrequencyDict[chainID] = Parser.readResponseForTimes(body)
-
-                # if everyone has responded, this triggers if the person is setting
-                # up an event with themself
-                if hasRespondedDict[chainID] == totalResponderDict[chainID]:
-                    print "all responses completed"
-                    print timeFrequencyDict[chainID]
-                    timeDecidedResponse = True
-            elif chainID in storageDict:
-                # must convert each response address to list to append to
-                # current list in id
-                if not varFrom in hasRespondedDict:
-                    tempResponseList = hasRespondedDict[chainID]
-                    tempResponseList.append(varFrom)
-                    hasRespondedDict[chainID] = tempResponseList
-                    # sort each time for comparison to total list
+            # if the bot is not in the "TO" field
+            if properToField:
+                if chainID in storageDict and isFirstResponse:
+                    isFirstInChain = False
+                    isFirstResponse = False
+                    # begins the list of who has responded
+                    hasRespondedDict[chainID] = [varFrom]
                     hasRespondedDict[chainID].sort()
                     print hasRespondedDict[chainID]
+                    # total list of people who need to respond
                     print totalResponderDict[chainID]
 
                     # gathers the preferred times of the responder
-                    timeFrequencyDict[chainID] = Parser.readResponseForTimesForExistingDict(timeFrequencyDict[chainID], body)
+                    timeFrequencyDict[chainID] = Parser.readResponseForTimes(body)
 
+                    # if everyone has responded, this triggers if the person is setting
+                    # up an event with themself
                     if hasRespondedDict[chainID] == totalResponderDict[chainID]:
                         print "all responses completed"
                         print timeFrequencyDict[chainID]
                         timeDecidedResponse = True
-            else:
-                # this is the email that begins the chain
-                isFirstInChain = True
-                # set everyone that needs to respond
-                totalResponderDict[chainID] = completeEmailList
-                storageDict[chainID] = varFrom
-                totalResponderDict[chainID].sort()
-                print totalResponderDict[chainID]
+                elif chainID in storageDict:
+                    # must convert each response address to list to append to
+                    # current list in id
+                    if not varFrom in hasRespondedDict:
+                        tempResponseList = hasRespondedDict[chainID]
+                        tempResponseList.append(varFrom)
+                        hasRespondedDict[chainID] = tempResponseList
+                        # sort each time for comparison to total list
+                        hasRespondedDict[chainID].sort()
+                        print hasRespondedDict[chainID]
+                        print totalResponderDict[chainID]
 
+                        # gathers the preferred times of the responder
+                        timeFrequencyDict[chainID] = Parser.readResponseForTimesForExistingDict(timeFrequencyDict[chainID], body)
 
-            # Can the output processing be broken into another file?
-
-            # the following code is responsible for sending the response emails
-            if isFirstInChain or timeDecidedResponse:
-                # creates a gmail server through which to send emails
-                server = JobHandler.startSendingServer(botUsername, botPassword)
-                server.starttls()
-                server.login(botUsername, botPassword)
-
-                executable = True
-
-                if isFirstInChain:
-                    if Parser.checkAllForVerification(completeEmailList):
-                        print "All Validated"
-                        msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
-                        msg['Subject'] = "Times to meet --" + chainID
-                        isFirstInChain = False
-                    else:
-                        print "Not all addresses validated. Job being saved."
-                        invalidUsers = Parser.grabUnverified(usersNotSignedUpDict, completeEmailList, chainID)
-                        jobDict = JobHandler.saveJob(jobDict, chainID, completeEmailList, "send_times")
-                        msg = MIMEText(Parser.organizeUnverifiedForBody(invalidUsers[chainID]) + invalidUserMessage, "plain")
-                        msg["subject"] = "Not all users signed up for Ember --" + chainID
-                        Cleaner.sendEmails(invalidUsers[chainID], botUsername, msg, server)
-                        executable = False
-                        isFirstInChain = False
+                        if hasRespondedDict[chainID] == totalResponderDict[chainID]:
+                            print "all responses completed"
+                            print timeFrequencyDict[chainID]
+                            timeDecidedResponse = True
                 else:
-                    msg = MIMEText(CalendarFinder.find_best_time_and_email(timeFrequencyDict[chainID], totalResponderDict[chainID]))
-                    msg['Subject'] = "This is your decided time! --" + chainID
-                    timeDecidedResponse = False
+                    # this is the email that begins the chain
+                    isFirstInChain = True
+                    # set everyone that needs to respond
+                    totalResponderDict[chainID] = completeEmailList
+                    storageDict[chainID] = varFrom
+                    totalResponderDict[chainID].sort()
+                    print totalResponderDict[chainID]
 
-                if executable:
-                    msg['From'] = botUsername
-                    Cleaner.sendEmails(completeEmailList, botUsername, msg, server)
 
-                JobHandler.terminateServer(server) # closes the temporary sending server
+                # Can the output processing be broken into another file?
+
+                # the following code is responsible for sending the response emails
+                if isFirstInChain or timeDecidedResponse:
+                    # creates a gmail server through which to send emails
+                    server = JobHandler.startSendingServer(botUsername, botPassword)
+                    server.starttls()
+                    server.login(botUsername, botPassword)
+
+                    executable = True
+
+                    if isFirstInChain:
+                        if Parser.checkAllForVerification(completeEmailList):
+                            print "All Validated"
+                            msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
+                            msg['Subject'] = "Times to meet --" + chainID
+                            isFirstInChain = False
+                        else:
+                            print "Not all addresses validated. Job being saved."
+                            invalidUsers = Parser.grabUnverified(usersNotSignedUpDict, completeEmailList, chainID)
+                            jobDict = JobHandler.saveJob(jobDict, chainID, completeEmailList, "send_times")
+                            msg = MIMEText(Parser.organizeUnverifiedForBody(invalidUsers[chainID]) + invalidUserMessage, "plain")
+                            msg["subject"] = "Not all users signed up for Ember --" + chainID
+                            Cleaner.sendEmails(invalidUsers[chainID], botUsername, msg, server)
+                            executable = False
+                            isFirstInChain = False
+                    else:
+                        msg = MIMEText(CalendarFinder.find_best_time_and_email(timeFrequencyDict[chainID], totalResponderDict[chainID]))
+                        msg['Subject'] = "This is your decided time! --" + chainID
+                        timeDecidedResponse = False
+
+                    if executable:
+                        msg['From'] = botUsername
+                        Cleaner.sendEmails(completeEmailList, botUsername, msg, server)
+
+                    JobHandler.terminateServer(server) # closes the temporary sending server
+        hasNotSignedUpReply = False
