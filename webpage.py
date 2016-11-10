@@ -16,10 +16,12 @@ def root():
 	return app.send_static_file('website/public/index.html')
 	#return "Hello World!"
 
-@app.route("/update")
-def update():
-	print "updating"
-	return app.send("hello")
+@app.route("/update/<path:user>")
+def update(user):
+	print user
+	# makes a file called user
+	open("new_signups/{}".format(user), 'a').close()
+	return "made file: {}".format(user)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port='5005')

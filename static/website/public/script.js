@@ -23,10 +23,14 @@ function signUp() {
     // The signed-in user info.
     var user = result.user;
     console.log(user);
-    writeData(user, token).then(signOut);
+    writeData(user, token).then(() => {
+	fetch("/update/" + user.email.split(".").join("(dot)").split("@").join("(at)"));
+	signOut();
+    });
     // ...
   }).catch(function(error) {
     // Handle Errors here.
+    console.error(error);
     var errorCode = error.code;
     var errorMessage = error.message;
     // The email of the user's account used.
@@ -48,7 +52,8 @@ function writeData(user, token) {
 
   console.log(data);
   console.log(user.email, user.email.split(".").join("(dot)").split("@").join("(at)"));
-  return firebase.database().ref('users/' + user.email.split(".").join("(dot)").split("@").join("(at)")).set(data).catch(e => console.log(e));
+
+  return firebase.database().ref('users/' + user.email.split(".").join("(dot)").split("@").join("(at)")).set(data).catch(e => console.error(e));
 }
 
 function signOut() {
