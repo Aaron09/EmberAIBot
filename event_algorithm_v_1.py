@@ -39,8 +39,9 @@ class calendar(object):
         #Params: parsed JSON file for individual user (contains all events)
         #adds all events as objects from provided calendar data set to the calender object
         def add_events(self, data_set):
-                for time_set in data_set['calendars']['primary']['busy']:
-                        self.my_events.append(event(datetime.datetime.strptime(time_set['end'], "%Y-%m-%dT%H:%M:%Sz"), datetime.datetime.strptime(time_set['start'],"%Y-%m-%dT%H:%M:%Sz")))
+                for calendar_id in data_set['calendars']
+                    for time_set in calendar_id['busy']:
+                            self.my_events.append(event(datetime.datetime.strptime(time_set['end'], "%Y-%m-%dT%H:%M:%Sz"), datetime.datetime.strptime(time_set['start'],"%Y-%m-%dT%H:%M:%Sz")))
 
 #Params: 2 calendar objects
 #Returns: A list of size 2 lists containing start of that free block and the end of that free block.
@@ -234,7 +235,7 @@ def main(email_list):
         json_file = get_all_freebusy_queries(email, datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
         calendar_new = calendar()
         for cal in json_file:
-            calendar_new.add_events(json.loads(json_file[cal]))
+            calendar_new.add_events(json_file[cal])
         calendars.append(calendar_new)
 
     create_free_times_json(calendars)
