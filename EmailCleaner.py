@@ -5,6 +5,19 @@
 #   Author: Aaron Green   #
 ###########################
 
+def parseRespList(respList, usedUIDS):
+    # resp contains an asterisk, uid, and "exists" message associated with each email
+    uid = 0
+    receivedMail = False
+    for i in range(0, len(respList)):   # looks for the uid
+        potentialUID = respList[i]
+        if potentialUID.isdigit() and potentialUID not in usedUIDS and respList[i+1] == "EXISTS":
+            uid = potentialUID
+            usedUIDS.append(str(uid))
+            receivedMail = True
+    return (uid, usedUIDS, receivedMail)
+
+
 def cleanEmailString(emailAddress):
     emailAddress = emailAddress.replace('<', '')
     emailAddress = emailAddress.replace('>', '')
@@ -22,7 +35,9 @@ def selectEmailAddresses(listOfPossibleAddresses):
 def sendEmails(listOfEmails, senderEmail, msg, sendServer):
     for address in listOfEmails:
         print "sending message to: " + address
-        sendServer.sendmail(senderEmail, address, msg.as_string())
+        if type(msg) is not str:
+            msg = msg.as_string()
+        sendServer.sendmail(senderEmail, address, msg)
         print "message sent"
 
 def onlyGetAddress(potentialEmailList):
