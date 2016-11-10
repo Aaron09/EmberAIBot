@@ -40,7 +40,7 @@ class calendar(object):
         #adds all events as objects from provided calendar data set to the calender object
         def add_events(self, data_set):
                 for calendar_id in data_set['calendars']:
-                    for time_set in calendar_id['busy']:
+                    for time_set in data_set['calendars'][calendar_id]['busy']:
                             self.my_events.append(event(datetime.datetime.strptime(time_set['end'], "%Y-%m-%dT%H:%M:%Sz"), datetime.datetime.strptime(time_set['start'],"%Y-%m-%dT%H:%M:%Sz")))
 
 #Params: 2 calendar objects
@@ -189,7 +189,7 @@ def generate_email_content(data_set):
 def generate_best_time_email(data_set, best_time):
     (free_zone_starts, free_zone_ends) = break_up_freezones(data_set)
     message = "Hello, \nthe final meeting time will be from \n"
-    message += free_zonez[0][best_time] + " to " + free_zones[1][best_time] + "\n"
+    message += free_zones_starts[best_time] + " to " + free_zones_ends[best_time] + "\n"
     return message
 
 #return the first free time and puts it in json to be added to calendar
@@ -232,7 +232,8 @@ def return_free_times():
 def main(email_list):
     calendars = []
     for email in email_list:
-        json_file = get_all_freebusy_queries(email, datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
+        json_file = json.loads(get_all_freebusy_queries(email, datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z'))
+
         calendar_new = calendar()
         for cal in json_file:
             calendar_new.add_events(json_file[cal])
