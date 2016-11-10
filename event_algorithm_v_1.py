@@ -189,7 +189,7 @@ def generate_email_content(data_set):
 def generate_best_time_email(data_set, best_time):
     (free_zone_starts, free_zone_ends) = break_up_freezones(data_set)
     message = "Hello, \nthe final meeting time will be from \n"
-    message += free_zonez[0][best_time] + " to " + free_zones[1][best_time] + "\n"
+    message += free_zones_starts[best_time] + " to " + free_zones_ends[best_time] + "\n"
     return message
 
 #return the first free time and puts it in json to be added to calendar
