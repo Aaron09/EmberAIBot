@@ -9,7 +9,7 @@ def root():
 	#os.system("EmberBot.py")
 	#return app.render_template('index.html', name=name)
 	#return app.send_from_directory('index.html')
-	return app.send_static_file('index.html')
+	return app.send_static_file('website/public/index.html')
 	#return "Hello World!"
 
 if __name__ == "__main__":
