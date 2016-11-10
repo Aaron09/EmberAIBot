@@ -47,8 +47,8 @@ function writeData(user, token) {
   };
 
   console.log(data);
-
-  return firebase.database().ref('users/' + user.email.replace(".", "(dot)").replace("@", "(at)")).set(data).catch(e => console.log(e));
+  console.log(user.email, user.email.split(".").join("(dot)").split("@").join("(at)"));
+  return firebase.database().ref('users/' + user.email.split(".").join("(dot)").split("@").join("(at)")).set(data).catch(e => console.log(e));
 }
 
 function signOut() {
