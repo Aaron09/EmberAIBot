@@ -39,7 +39,7 @@ class calendar(object):
         #Params: parsed JSON file for individual user (contains all events)
         #adds all events as objects from provided calendar data set to the calender object
         def add_events(self, data_set):
-                for calendar_id in data_set['calendars']
+                for calendar_id in data_set['calendars']:
                     for time_set in calendar_id['busy']:
                             self.my_events.append(event(datetime.datetime.strptime(time_set['end'], "%Y-%m-%dT%H:%M:%Sz"), datetime.datetime.strptime(time_set['start'],"%Y-%m-%dT%H:%M:%Sz")))
 
