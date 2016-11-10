@@ -231,7 +231,7 @@ def return_free_times():
 def main(email_list):
     calendars = []
     for email in email_list:
-        json_file = get_all_freebusy_query(email, datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
+        json_file = get_all_freebusy_queries(email, datetime.datetime.utcnow().isoformat() + 'Z', (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z')
         calendar_new = calendar()
         for cal in json_file:
             calendar_new.add_events(json.loads(json_file[cal]))
