@@ -1,4 +1,4 @@
-# firebase-server
+# website
 
 Run the following in the home directory:
 ```
