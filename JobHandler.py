@@ -11,6 +11,11 @@ import event_algorithm_v_1 as CalendarFinder
 from email.mime.text import MIMEText
 import EmailParser as Parser
 
+def cleanNewEmail(address):
+    address = address.replace("(dot)", ".")
+    address = address.replace("(at)", "@")
+    return address
+
 def eventExecute(address, totalResponderDict, jobDict, botUsername, botPassword):
     chainID = findChainID(totalResponderDict, address)
     print "Checking for chainID"

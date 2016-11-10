@@ -56,6 +56,8 @@ class MyEventHandler(FileSystemEventHandler):
 
     def on_created(self, event):
         newEmail = event.src_path[event.src_path.index("/")+1:len(event.src_path)]
+        newEmail = JobHandler.cleanNewEmail(newEmail)
+        print newEmail
         if not event.is_directory:
             JobHandler.eventExecute(newEmail, totalResponderDict, jobDict, botUsername, botPassword)
 
