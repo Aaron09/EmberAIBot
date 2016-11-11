@@ -21,6 +21,7 @@ import time
 import logging
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+import shutil
 
 storageDict = {}
 hasRespondedDict = {}
@@ -55,13 +56,14 @@ class MyEventHandler(FileSystemEventHandler):
         self.observer = observer
 
     def on_created(self, event):
-        newEmail = event.src_path[event.src_path.index("/")+1:len(event.src_path)]
-        newEmail = JobHandler.cleanNewEmail(newEmail)
-        print newEmail
-        if not event.is_directory:
+        if not event.is_directory and not event.src_path == "new_signups":
+            newEmail = event.src_path[event.src_path.index("/")+1:len(event.src_path)]
+            newEmail = JobHandler.cleanNewEmail(newEmail)
+            print newEmail
+            shutil.rmtree('new_signups')
             JobHandler.eventExecute(newEmail, totalResponderDict, jobDict, botUsername, botPassword)
 
-path = "new_signups/"
+path = sys.argv[1] if len(sys.argv) > 1 else '.'
 observer = Observer()
 event_handler = MyEventHandler(observer)
 observer.schedule(event_handler, path, recursive=True)
