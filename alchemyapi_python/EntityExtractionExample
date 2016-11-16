@@ -1,0 +1,18 @@
+from __future__ import print_function
+from alchemyapi import AlchemyAPI
+from watson_developer_cloud import AlchemyLanguageV1
+import json
+
+demo_text = "Yep, Sent this to Ryan but my availability from now till then is this Monday" #11/7/16 7am-10am (PST) this Tuesday 11/8 12:15pm-5pm (PST) and this Wednesday 11/9 1:15pm-onwards (PST)"
+# Create the AlchemyAPI Object
+alchemyapi = AlchemyAPI()
+alchemy_language = AlchemyLanguageV1(api_key="0d5c8abca5c38b43c7e66212dfab6b8bfee6005a")
+
+
+response = alchemyapi.combined('text', demo_text, {'sentiment': 1})
+
+response2 = alchemy_language.dates(text=demo_text, anchor_date='2016-11-06 18:33:00')
+
+print(json.dumps(response, indent=2))
+
+print(json.dumps(response2, indent=2))
