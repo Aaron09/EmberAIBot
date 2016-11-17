@@ -21,7 +21,7 @@ import time
 import logging
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-import shutil
+import os
 
 storageDict = {}
 hasRespondedDict = {}
@@ -47,7 +47,7 @@ isFirstInChain = False
 isFirstResponse = True
 timeDecidedResponse = False
 chainIDList = []
-invalidUserMessage = "please go to the Ember website and sign up!\nOnce you've done this, reply to this email letting me know you've signed up!"
+invalidUserMessage = "please go to the Ember website and sign up!"
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -56,14 +56,16 @@ class MyEventHandler(FileSystemEventHandler):
         self.observer = observer
 
     def on_created(self, event):
-        if not event.is_directory and not event.src_path == "new_signups":
-            newEmail = event.src_path[event.src_path.index("/")+1:len(event.src_path)]
+        if not event.src_path == "new_signups/":
+            print "NEW USER'S PATH: " + event.src_path
+            newEmail = event.src_path
             newEmail = JobHandler.cleanNewEmail(newEmail)
-            print newEmail
-            shutil.rmtree('new_signups')
+            print "NEW USER: " + newEmail
+            fileName = event.src_path
+            os.remove(fileName)
             JobHandler.eventExecute(newEmail, totalResponderDict, jobDict, botUsername, botPassword)
 
-path = sys.argv[1] if len(sys.argv) > 1 else '.'
+path = "new_signups/"
 observer = Observer()
 event_handler = MyEventHandler(observer)
 observer.schedule(event_handler, path, recursive=True)

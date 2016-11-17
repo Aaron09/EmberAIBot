@@ -12,7 +12,6 @@ from email.mime.text import MIMEText
 import EmailParser as Parser
 
 def cleanNewEmail(address):
-    print address
     address = address[address.index("/")+1:len(address)]
     address = address.replace("(dot)", ".")
     address = address.replace("(at)", "@")
