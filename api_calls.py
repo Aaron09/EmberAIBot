@@ -32,18 +32,45 @@ def get_credentials(user):
 
     database = firebase.FirebaseApplication('https://ember-ai-146020.firebaseio.com', authentication=authentication)
 
-    token = database.get('/users', user.replace('.', '(dot)').replace('@', '(at)'))
-    credentials = client.AccessTokenCredentials(token['token'], 'my-user-agent/1.0')
-    # credentials = client.GoogleCredentials(token['token'], "295894273459-m5r8e3572ru6vs7tlvjpor2o99bv7g1l.apps.googleusercontent.com", "BQhM6U69IS0XHK8itNb0vjpV", token['refreshToken'], 1, "https://accounts.google.com/o/oauth2/token", 'my-user-agent/1.0')
-    # print(credentials.to_json()) # TODO: remove (and above)
+    if database.get('/users', user.replace('.', '(dot)').replace('@', '(at)')) is not None:
+        user_info = database.get('/users', user.replace('.', '(dot)').replace('@', '(at)'))
+    else:
+        return None
+
+    with open(CLIENT_SECRET_FILE) as cs_file:
+        client_secret_file = json.load(cs_file)
+
+    access_token = user_info['token']
+    client_id = client_secret_file['installed']['client_id']
+    client_secret = client_secret_file['installed']['client_secret']
+    refresh_token = user_info['refreshToken']
+    token_expiry = None
+    token_uri = client_secret_file['installed']['token_uri']
+    user_agent = client_secret_file['installed']['project_id']
+
+    credentials = client.GoogleCredentials(access_token, client_id, client_secret, refresh_token, token_expiry, token_uri, user_agent)
 
     return credentials
 
 
 def credientials_exist(user):
-    authentication = firebase.FirebaseAuthentication(FIREBASE_SECRET, 'emberuiucbot@gmail.com')
-    database = firebase.FirebaseApplication('https://ember-ai-146020.firebaseio.com', authentication=authentication)
-    return not database.get('/users', user.replace('.', '(dot)').replace('@', '(at)')) is None
+
+    # temporary solution to refresh tokens problem:
+    # if credentials are not refreshed, return as if they don't exist
+    try:
+        credentials = get_credentials(user)
+
+        if credentials is None:
+            return False
+
+        http = credentials.authorize(httplib2.Http())
+        service = discovery.build('calendar', 'v3', http=http)
+        timezone = service.settings().get(setting='timezone').execute() # test api call to see if credentials are still working
+
+    except (client.AccessTokenCredentialsError, client.HttpAccessTokenRefreshError):
+        return False
+
+    return True
 
 
 def get_timezone(user):
@@ -144,5 +171,6 @@ if __name__ == '__main__':
     print(credientials_exist("emberuiucbot@gmail.com"))
     print(credientials_exist("pranayiscool"))
     # print(get_timezone("emberuiucbot@gmail.com"))
+    print(credientials_exist("ophirsneh@gmail.com"))
     print(get_all_freebusy_queries("ophirsneh@gmail.com", datetime.datetime.utcnow().isoformat() + 'Z',
-                             (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z'))
+                                   (datetime.datetime.utcnow() + datetime.timedelta(days=1)).isoformat() + 'Z'))
