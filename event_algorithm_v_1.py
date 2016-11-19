@@ -200,7 +200,7 @@ def create_calendar(json_data):
 #creates json file with all the free times between calendars
 def create_free_times_json(calendar_list):
     with open('free_times.json', 'w') as outfile:
-            json.dump(checkTime(calendar_list), outfile)
+        json.dump(checkTime(calendar_list), outfile)
 
 def utc_to_local(utc_dt):
     local_tz = pytz.timezone('US/Central')
@@ -266,7 +266,7 @@ def return_time(data_set, best_time):
 def return_free_times():
     if(os.path.isfile('free_times.json')):
         with open('free_times.json') as data_file:
-                free_times_data = json.load(data_file)
+            free_times_data = json.load(data_file)
     return generate_email_content(free_times_data) #return to Aaron for email
 
 #main method to execute whole process

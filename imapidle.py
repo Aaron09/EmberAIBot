@@ -14,8 +14,6 @@ def idle(connection):
         while connection.loop:
             resp = connection.readline()
             yield resp
-           # uid, message = resp[2:-2].split(' ')
-           # yield uid, message
     else:
         raise Exception("IDLE not handled? : %s" % response)
 

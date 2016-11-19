@@ -103,25 +103,6 @@ for resp in mail.idle():
             hasNotSignedUpReply = False
             print "has signed up"
 
-        # each time an email is received that is part of an existing chain, we
-        # check if that job can be processed
-        # this doesn't work. But it shows the theory behind it. I need a way
-        # to know when someone know signs up for the service, then I can check
-        # if they are a part of a job I am waiting to complete, if so, I check if
-        # I can complete that job.
-
-        # Ophir is making the way to tell me if someone new signs up for the service
-        # So I need a way to wait and call the method when someone knew signs up
-        # Could I have an eternally running "while(True)" that checks every so often
-        # if someone knew has signed up, and if so, how do I then complete the rest
-        # of what needs to be done.
-
-        # if chainID in jobDict and hasNotSignedUpReply:
-        #     print "Checking for Verification"
-        #     if Parser.checkAllForVerification(totalResponderDict[chainID]):
-        #         jobType = JobHandler.getJob(jobDict, chainID)
-        #         JobHandler.executeJob(jobDict, chainID, botUsername, botPassword)
-
         if not hasNotSignedUpReply:
             # if the email is sent directly to the bot (via the "TO" field),
             # the bot will not respond
