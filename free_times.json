@@ -1,1 +1,1 @@
-{"free_zones": [{"month": 10, "minute": 35, "hour": 19, "year": 2016, "type": "start", "day": 30}, {"month": 10, "minute": 30, "hour": 16, "year": 2016, "type": "end", "day": 31}, {"month": 10, "minute": 30, "hour": 17, "year": 2016, "type": "start", "day": 31}, {"month": 10, "minute": 59, "hour": 23, "year": 2016, "type": "end", "day": 31}], "day": 1}
+{"free_zones": [{"hour": 6, "month": 11, "year": 2016, "type": "start", "day": 19, "minute": 1}, {"hour": 6, "month": 11, "year": 2016, "type": "end", "day": 20, "minute": 1}], "day": 1}

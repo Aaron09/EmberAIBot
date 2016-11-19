@@ -10,6 +10,12 @@ from imapidle import imaplib
 import email
 import EmailCleaner as Cleaner
 
+def hasNotSignedUpTag(subjectLine):
+    if "Not all users signed up for Ember" in subjectLine:
+        return True
+    else:
+        return False
+
 def organizeUnverifiedForBody(addresses):
     bodyPart = ""
     for i in range(0, len(addresses)):
