@@ -1,4 +1,4 @@
-import datetime
+
 import json
 import os
 from dateutil import rrule
@@ -89,11 +89,11 @@ def checkTime(calendar_list):
         if(in_free_time):
             free_zones_JSON.append({
                                             "type": "end",
-                                            "hour": 23,
-                                            "minute": 59,
-                                            "day":dt.day,
-                                            "month":dt.month,
-                                            "year":dt.year
+                                            "hour": end.hour,
+                                            "minute": end.minute,
+                                            "day":end.day,
+                                            "month":end.month,
+                                            "year":end.year
                                     })
 
         #The Json Object we return.
