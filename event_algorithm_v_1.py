@@ -69,14 +69,14 @@ def checkTime(calendar_list):
                 #check if all cals are free
                 allCalendarsFree = checkCountCalendars(calendar_collection)
 
-
+                '''
                 if(find_num_avaiable(calendar_collection) > best_free_count and not waitng_for_best_end):
                     best_free_count = find_num_avaiable(calendar_collection)
                     best_free_start = dt
                     waitng_for_best_end = True
                 if(find_num_avaiable(calendar_collection) != best_free_count and waitng_for_best_end):
                     best_free_end = dt
-
+                '''
 
                 if(allCalendarsFree and not in_free_time):
                     free_zones_JSON.append({
@@ -114,6 +114,7 @@ def checkTime(calendar_list):
         free_zones_JSON = clean_up_times(free_zones_JSON)
         with open("output.txt", "w") as text_file:
             text_file.write(str(len(free_zones_JSON)) + "\n")
+        '''
         if( len(free_zones_JSON) < 2):
             free_zones_JSON.append({
                                             "type": "start",
@@ -134,6 +135,7 @@ def checkTime(calendar_list):
             with open("output.txt", "w") as text_file:
                 text_file.write("dc;kjbsdl" + "\n")
                 text_file.write(str(len(free_zones_JSON)) + "\n")
+        '''
         return {
                 'day': 1,
                 'free_zones': free_zones_JSON
