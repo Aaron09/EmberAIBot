@@ -10,16 +10,24 @@ This occurs because LUIS cannot detect more than two datetimes in a sentence.
 
 def analyze_text():
     datetime_sentences = []
+    datetimeSentences = {}
     with open('sample_text.txt', 'r') as f:
         text = f.read()
     sentences = sent_tokenize(text)
     for sentence in xrange(len(sentences)):
         sentences[sentence] = sentences[sentence].replace('\n', ' ')
     for sentence in xrange(len(sentences)):
-        #if len(find_dates(sentences[sentence])) != 0:
+        times = ""
         if find_dates(sentences[sentence]) != [['', []]]:
-            datetime_sentences.append([sentences[sentence], find_dates(sentences[sentence])])
-    return datetime_sentences    
+            date = find_dates(sentences[sentence])[0][0]
+            time = find_dates(sentences[sentence])[0][1]
+            for timestring in xrange(len(time)):
+                times += time[timestring]
+                if timestring != len(time) - 1: times += ", "
+            if date != "": datetimeSentences[date] = sentences[sentence]
+            if str(time) != "[]": datetimeSentences[times] = sentences[sentence]
+            #datetime_sentences.append([sentences[sentence], find_dates(sentences[sentence])])
+    return datetimeSentences    
 
 def find_dates(string):
     now = datetime.datetime.now()
@@ -66,15 +74,6 @@ def find_dates(string):
         if readyear == "XXXX": readyear = year
         if readmonth == "XX": readmonth = month
         date = str(readyear) + "-" + str(readmonth)+ "-" + str(readday)
-        '''array.append(date)
-        array.append(times)
-        print array
- #       dates.append([date, times])
-        dates.append(array)
-        array = []
-        year = now.year
-        month = now.month
-        day = now.day'''
     array.append(date)
     array.append(times)
     dates.append(array)
