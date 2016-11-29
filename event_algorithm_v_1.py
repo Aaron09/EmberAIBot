@@ -45,16 +45,16 @@ class calendar(object):
 
 #Params: 2 calendar objects
 #Returns: A list of size 2 lists containing start of that free block and the end of that free block.
-def checkTime(calendar_list):
+def check_time(calendar_list):
         calendar_collection = calendar_list
         free_zones_JSON = []
-        in_free_time = True
+        in_free_time = False
 
-        best_free_count = float("-inf")
+        best_free_count = float("inf")
         best_free_start = datetime.datetime.utcnow()
         best_free_end = datetime.datetime.utcnow()
-        waitng_for_best_end = True
-        #These are simply dummy times and will be changed once we check sections larger than 24h
+        waitng_for_best_end = False
+
         start = datetime.datetime.utcnow()
         #start.replace(tzinfo= pytz.timezone('US/Central'))
         end = start + timedelta(days=1)
@@ -67,16 +67,18 @@ def checkTime(calendar_list):
                     elif (event.event_ends(dt.hour,dt.minute)):
                             calendar.event_counter -= 1
                 #check if all cals are free
-                allCalendarsFree = checkCountCalendars(calendar_collection)
+                allCalendarsFree = check_count_calendars(calendar_collection)
 
-                '''
-                if(find_num_avaiable(calendar_collection) > best_free_count and not waitng_for_best_end):
+                if(find_num_avaiable(calendar_collection) < best_free_count and not waitng_for_best_end):
+                    print("started",dt,find_num_avaiable(calendar_collection))
                     best_free_count = find_num_avaiable(calendar_collection)
                     best_free_start = dt
                     waitng_for_best_end = True
                 if(find_num_avaiable(calendar_collection) != best_free_count and waitng_for_best_end):
+                    print("ended",dt,find_num_avaiable(calendar_collection))
                     best_free_end = dt
-                '''
+                    waitng_for_best_end = False
+                
 
                 if(allCalendarsFree and not in_free_time):
                     free_zones_JSON.append({
@@ -111,10 +113,7 @@ def checkTime(calendar_list):
                                     })
 
         #The Json Object we return.
-        free_zones_JSON = clean_up_times(free_zones_JSON)
-        with open("output.txt", "w") as text_file:
-            text_file.write(str(len(free_zones_JSON)) + "\n")
-        '''
+        free_zones_JSON = clean_up_times(free_zones_JSON)        
         if( len(free_zones_JSON) < 2):
             free_zones_JSON.append({
                                             "type": "start",
@@ -132,10 +131,7 @@ def checkTime(calendar_list):
                                             "month": best_free_end.month,
                                             "year": best_free_end.year
                                     })
-            with open("output.txt", "w") as text_file:
-                text_file.write("dc;kjbsdl" + "\n")
-                text_file.write(str(len(free_zones_JSON)) + "\n")
-        '''
+        
         return {
                 'day': 1,
                 'free_zones': free_zones_JSON
@@ -177,7 +173,7 @@ def clean_up_times(free_zones_JSON):
 
 #Params: A list of calendars
 #Returns: If all the calendars are free at the time checked
-def checkCountCalendars(calendar_collection):
+def check_count_calendars(calendar_collection):
     count = 0
     for calendarCHECK in calendar_collection:
         if(calendarCHECK.event_counter == 0):
@@ -187,8 +183,7 @@ def checkCountCalendars(calendar_collection):
 def find_num_avaiable(calendar_collection):
     count = 0
     for calendarCHECK in calendar_collection:
-        if(calendarCHECK.event_counter == 0):
-            count+=1
+        count+=calendarCHECK.event_counter
     return count
 
 
@@ -202,7 +197,7 @@ def create_calendar(json_data):
 #creates json file with all the free times between calendars
 def create_free_times_json(calendar_list):
     with open('free_times.json', 'w') as outfile:
-        json.dump(checkTime(calendar_list), outfile)
+        json.dump(check_time(calendar_list), outfile)
 
 def utc_to_local(utc_dt):
     local_tz = pytz.timezone('US/Central')
@@ -233,9 +228,9 @@ def generate_email_content(data_set):
     return message
 
 def generate_best_time_email(data_set, best_time):
-    (free_zone_starts, free_zone_ends) = break_up_freezones(data_set)
+    free_zones = break_up_freezones(data_set)
     message = "Hello, \nthe final meeting time will be from \n"
-    message += free_zones_starts[best_time] + " to " + free_zones_ends[best_time] + "\n"
+    message += free_zones[0][best_time] + " to " + free_zones[1][best_time] + "\n"
     return message
 
 #return the first free time and puts it in json to be added to calendar
@@ -284,7 +279,10 @@ def main(email_list):
         for cal in json_file:
             calendar_new.add_events(json_file[cal])
         calendars.append(calendar_new)
-
+    #print calendars
+    # for cal in calendars:
+    #     for event in cal.my_events:
+    #         print(event.start_time , event.end_time)
     create_free_times_json(calendars)
     return (return_free_times())
 
