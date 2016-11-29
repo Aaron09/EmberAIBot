@@ -197,7 +197,7 @@ for resp in mail.idle():
 
                     if executable:
                         msg['From'] = botUsername
-                        Cleaner.sendEmails(completeEmailList, botUsername, msg, server)
+                        Cleaner.sendEmails(totalResponderDict[chainID], botUsername, msg, server)
 
                     JobHandler.terminateServer(server) # closes the temporary sending server
         hasNotSignedUpReply = False
