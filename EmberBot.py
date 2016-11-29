@@ -31,9 +31,11 @@ jobDict = {} # holds the unprocessable jobs because of verification
 usersNotSignedUpDict = {}
 
 # to hide the username and password on github
-with open("BotCredentials") as file:
+with open("BotCredentials.txt") as file:
     botUsername = file.readline().strip()
     botPassword = file.readline().strip()
+    print(botPassword,botUsername)
+
 
 # creates the server that will be responsible for idling
 mail = imaplib.IMAP4_SSL("imap.gmail.com")
@@ -57,10 +59,10 @@ class MyEventHandler(FileSystemEventHandler):
 
     def on_created(self, event):
         if not event.src_path == "new_signups/":
-            print "NEW USER'S PATH: " + event.src_path
+            print ("NEW USER'S PATH: " + event.src_path)
             newEmail = event.src_path
             newEmail = JobHandler.cleanNewEmail(newEmail)
-            print "NEW USER: " + newEmail
+            print ("NEW USER: " + newEmail)
             fileName = event.src_path
             os.remove(fileName)
             JobHandler.eventExecute(newEmail, totalResponderDict, jobDict, botUsername, botPassword)
@@ -98,10 +100,10 @@ for resp in mail.idle():
 
         if Parser.hasNotSignedUpTag(subjectKey):
             hasNotSignedUpReply = True
-            print "hasn't signed up"
+            print ("hasn't signed up")
         else:
             hasNotSignedUpReply = False
-            print "has signed up"
+            print ("has signed up")
 
         if not hasNotSignedUpReply:
             # if the email is sent directly to the bot (via the "TO" field),
@@ -122,9 +124,9 @@ for resp in mail.idle():
                     # begins the list of who has responded
                     hasRespondedDict[chainID] = [varFrom]
                     hasRespondedDict[chainID].sort()
-                    print hasRespondedDict[chainID]
+                    print (hasRespondedDict[chainID])
                     # total list of people who need to respond
-                    print totalResponderDict[chainID]
+                    print (totalResponderDict[chainID])
 
                     # gathers the preferred times of the responder
                     timeFrequencyDict[chainID] = Parser.readResponseForTimes(body)
@@ -132,8 +134,8 @@ for resp in mail.idle():
                     # if everyone has responded, this triggers if the person is setting
                     # up an event with themself
                     if hasRespondedDict[chainID] == totalResponderDict[chainID]:
-                        print "all responses completed"
-                        print timeFrequencyDict[chainID]
+                        print ("all responses completed")
+                        print (timeFrequencyDict[chainID])
                         timeDecidedResponse = True
                 elif chainID in storageDict:
                     # must convert each response address to list to append to
@@ -144,15 +146,15 @@ for resp in mail.idle():
                         hasRespondedDict[chainID] = tempResponseList
                         # sort each time for comparison to total list
                         hasRespondedDict[chainID].sort()
-                        print hasRespondedDict[chainID]
-                        print totalResponderDict[chainID]
+                        print (hasRespondedDict[chainID])
+                        print (totalResponderDict[chainID])
 
                         # gathers the preferred times of the responder
                         timeFrequencyDict[chainID] = Parser.readResponseForTimesForExistingDict(timeFrequencyDict[chainID], body)
 
                         if hasRespondedDict[chainID] == totalResponderDict[chainID]:
-                            print "all responses completed"
-                            print timeFrequencyDict[chainID]
+                            print ("all responses completed")
+                            print (timeFrequencyDict[chainID])
                             timeDecidedResponse = True
                 else:
                     # this is the email that begins the chain
@@ -161,7 +163,7 @@ for resp in mail.idle():
                     totalResponderDict[chainID] = completeEmailList
                     storageDict[chainID] = varFrom
                     totalResponderDict[chainID].sort()
-                    print totalResponderDict[chainID]
+                    print (totalResponderDict[chainID])
 
 
                 # Can the output processing be broken into another file?
@@ -177,12 +179,12 @@ for resp in mail.idle():
 
                     if isFirstInChain:
                         if Parser.checkAllForVerification(completeEmailList):
-                            print "All Validated"
+                            print ("All Validated")
                             msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
                             msg['Subject'] = "Times to meet --" + chainID
                             isFirstInChain = False
                         else:
-                            print "Not all addresses validated. Job being saved."
+                            print ("Not all addresses validated. Job being saved.")
                             invalidUsers = Parser.grabUnverified(usersNotSignedUpDict, completeEmailList, chainID)
                             jobDict = JobHandler.saveJob(jobDict, chainID, completeEmailList, "send_times")
                             msg = MIMEText(Parser.organizeUnverifiedForBody(invalidUsers[chainID]) + invalidUserMessage, "plain")
