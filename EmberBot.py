@@ -105,6 +105,12 @@ for resp in mail.idle():
             hasNotSignedUpReply = False
             print ("has signed up")
 
+        if chainID in hasRespondedDict:
+            isFirstResponse = False
+        else:
+            isFirstResponse = True
+
+
         if not hasNotSignedUpReply:
             # if the email is sent directly to the bot (via the "TO" field),
             # the bot will not respond
