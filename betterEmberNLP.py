@@ -1,7 +1,6 @@
 import luis # the luis package had to be slightly modified
 import datetime
 import dateutil.parser as dparser
-import isodate
 from nltk.tokenize import sent_tokenize
 
 '''
