@@ -13,7 +13,7 @@ import email
 import EmailCleaner as Cleaner  # custom API made by Aaron Green for organizing EmberBot code
 import smtplib   # used for sending the response email
 from email.mime.text import MIMEText
-import event_algorithm_v_1 as CalendarFinder
+import freetime_builder as CalendarFinder
 import EmailParser as Parser
 import JobHandler
 import sys
@@ -186,7 +186,7 @@ for resp in mail.idle():
                     if isFirstInChain:
                         if Parser.checkAllForVerification(completeEmailList):
                             print ("All Validated")
-                            msg = MIMEText(CalendarFinder.main(completeEmailList), "plain")
+                            msg = MIMEText(CalendarFinder.build_free_times(completeEmailList), "plain")
                             msg['Subject'] = "Times to meet --" + chainID
                             isFirstInChain = False
                         else:
