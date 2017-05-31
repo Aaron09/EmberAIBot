@@ -1,3 +1,3 @@
-# revised-email-bot
+# Ember AI
 
-The bot no longer crashes (it can run forever). The code was also cleaned up: I made an API for it and generally improved the design and functionality. 
+An intelligent email assistant for automatically scheduling meetings for groups of people. Ember worries about all of the back and forth communication so you don't have to. When everyone has agreed on a time, there will be a confirmation email sent and everyone's Google Calendars will be updated.
